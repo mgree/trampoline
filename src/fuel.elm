@@ -3,6 +3,8 @@ module Fuel exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Events exposing (onClick)
+import Process
+import Task
 import Time
 
 type alias Gas = Int
@@ -49,6 +51,9 @@ andThen cont engineA = \tank0 ->
 burn : Fueled a -> Fueled a
 burn engine = \tank0 -> run engine (tank0 - 1)
 
+mkEngine : (() -> Fueled a) -> Fueled a
+mkEngine thunk = burn (\tank0 -> thunk () tank0)
+
 countDown : Int -> Fueled Int
 countDown n = burn <|
     if n <= 0
@@ -62,33 +67,86 @@ factorial n = burn <|
     else factorial (n-1) |> andThen (\res -> 
          return (res * n))
 
-type Msg = Go | Tick Time.Posix
-type Model = Inert | Running Gas (Fueled Int) | Finished Int
+diverge : Int -> Fueled Int
+diverge n = burn <| 
+    (return (n+1) |> andThen diverge)
 
-initialTank : Gas
-initialTank = 5
+-- This function doesn't behave the way you'd hope. Strict evaluation seems to want badDiverge to be a VALUE. 
+badDiverge : Int -> Fueled Int
+badDiverge n = burn (badDiverge (n+1))
 
-doTick : Model -> Model
-doTick model =
-    case model of
-        Inert -> Inert
-        Finished n -> Finished n
+-- The (admittedly gross) solution is to thunk the computation.
+betterDiverge : Int -> Fueled Int
+betterDiverge n = mkEngine (\() -> betterDiverge (n+1))
+
+type Msg = Go | Refuel Gas | Stop | Tick Time.Posix
+type State = Inert | Running Gas (Fueled Int) | Stopped Gas (Fueled Int) | Finished Int
+type alias Model =
+  { state : State
+  , time : Time.Posix
+  }
+
+-- There's a careful interplay between pauseTime and refuelAmount.
+--
+-- Make pauseTime too low and no other events get to run... so you can't stop your computation. Bad news.
+-- Make pauseTime too high and your fueled computation runs too slowly.
+--
+-- Make refuelAmount too low and your fueled computation runs too slowly.
+-- Make refuelAmount too high and your event loop might get unresponsive.
+refuelCmd : Gas -> Float -> Cmd Msg
+refuelCmd refuelAmount pauseTime = Task.perform (\() -> Refuel refuelAmount) (Process.sleep pauseTime)
+
+defaultRefuel : Cmd Msg
+defaultRefuel = refuelCmd 5 20.0
+
+doGo : Model -> (Model, Cmd Msg)
+doGo model =
+    case model.state of
+        Inert -> ({ model | state = Running 0 (betterDiverge 20) }, defaultRefuel)
+        Finished n -> (model, Cmd.none)
+        Running used engine -> (model, Cmd.none)
+        Stopped used engine -> ({ model | state = Running used engine }, defaultRefuel)
+
+doRefuel : Model -> Gas -> (Model, Cmd Msg)
+doRefuel model gas =
+    case model.state of
+        Inert -> (model, Cmd.none)
+        Finished n -> (model, Cmd.none)
         Running used engine -> 
-            let (tank, res) = run engine initialTank in
+            let (tank, res) = run engine gas in
             case res of 
-                OutOfGas newEngine -> Running (used + initialTank) newEngine
-                Complete v -> Finished v
+                OutOfGas newEngine -> ({ model | state = Running (used + gas) newEngine }, defaultRefuel)
+                Complete v -> ({ model | state = Finished v }, Cmd.none)
+        Stopped used engine -> (model, Cmd.none)
+
+doStop : Model -> Model
+doStop model =
+    case model.state of
+        Inert -> model
+        Finished n -> model
+        Running used engine -> { model | state = Stopped used engine }
+        Stopped used engine -> model
 
 main = Browser.element 
-    { init = \() -> (Inert, Cmd.none)
+    { init = \() -> ({ state = Inert, time = Time.millisToPosix 0 }, Cmd.none)
     , view = \model ->
-        case model of
-            Inert -> button [ onClick Go ] [ text "go" ]
-            Running used f -> div [] [ text "running, used gas: ", String.fromInt used |> text ]
-            Finished n -> div [] [ text "done @ ", String.fromInt n |> text ]
+        div []
+            [ case model.state of
+                Inert -> button [ onClick Go ] [ text "go" ]
+                Running used f -> div [] [ text "running, used gas: ", String.fromInt used |> text 
+                                         , button [ onClick Stop ] [ text "stop" ]
+                                         ]
+                Stopped used f -> div [] [ text "stopped, used gas: ", String.fromInt used |> text 
+                                         , button [ onClick Go ] [ text "resume" ]
+                                         ]
+                Finished n -> div [] [ text "done @ ", String.fromInt n |> text ]
+            , h1 [] [ model.time |> Time.posixToMillis |> String.fromInt |> text ]
+            ]
     , update = \msg model -> 
         case msg of
-            Go -> (Running 0 (factorial 20), Cmd.none)
-            Tick _ -> (doTick model, Cmd.none)
-    , subscriptions = \_ -> Time.every 50 Tick
+            Go -> doGo model
+            Refuel gas -> doRefuel model gas
+            Stop -> (doStop model, Cmd.none)
+            Tick newTime -> ({ model | time = newTime }, Cmd.none)
+    , subscriptions = \model -> Time.every 100 Tick
     }
