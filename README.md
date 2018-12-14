@@ -10,5 +10,3 @@ The `Trampoline` idiom is a way of structuring a program to use `Fuel`: timers o
   + When would we want more or less?
 - We could have fueled computations have a notion of intermediate result.
   + More management in the monad, but would allow for nicer UIs.
-- Tests are badly broken.
-
