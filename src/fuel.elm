@@ -1,12 +1,5 @@
 module Fuel exposing (..)
 
-import Browser
-import Html exposing (..)
-import Html.Events exposing (onClick)
-import Process
-import Task
-import Time
-
 type alias Gas = Int
 
 {-
@@ -23,6 +16,12 @@ run engine tank0 =
     if tank0 <= 0
     then (0, OutOfGas engine)
     else engine tank0
+
+runToCompletion : Fueled a -> Gas -> a
+runToCompletion engine tankSize =
+    case run engine tankSize of
+        (tankLeft, OutOfGas nextEngine) -> runToCompletion nextEngine tankSize
+        (tankLeft, Complete result) -> result
 
 map : (a -> b) -> Fueled a -> Fueled b
 map f engine = \tank0 ->
@@ -79,74 +78,3 @@ badDiverge n = burn (badDiverge (n+1))
 betterDiverge : Int -> Fueled Int
 betterDiverge n = mkEngine (\() -> betterDiverge (n+1))
 
-type Msg = Go | Refuel Gas | Stop | Tick Time.Posix
-type State = Inert | Running Gas (Fueled Int) | Stopped Gas (Fueled Int) | Finished Int
-type alias Model =
-  { state : State
-  , time : Time.Posix
-  }
-
--- There's a careful interplay between pauseTime and refuelAmount.
---
--- Make pauseTime too low and no other events get to run... so you can't stop your computation. Bad news.
--- Make pauseTime too high and your fueled computation runs too slowly.
---
--- Make refuelAmount too low and your fueled computation runs too slowly.
--- Make refuelAmount too high and your event loop might get unresponsive.
-refuelCmd : Gas -> Float -> Cmd Msg
-refuelCmd refuelAmount pauseTime = Task.perform (\() -> Refuel refuelAmount) (Process.sleep pauseTime)
-
-defaultRefuel : Cmd Msg
-defaultRefuel = refuelCmd 5 20.0
-
-doGo : Model -> (Model, Cmd Msg)
-doGo model =
-    case model.state of
-        Inert -> ({ model | state = Running 0 (betterDiverge 20) }, defaultRefuel)
-        Finished n -> (model, Cmd.none)
-        Running used engine -> (model, Cmd.none)
-        Stopped used engine -> ({ model | state = Running used engine }, defaultRefuel)
-
-doRefuel : Model -> Gas -> (Model, Cmd Msg)
-doRefuel model gas =
-    case model.state of
-        Inert -> (model, Cmd.none)
-        Finished n -> (model, Cmd.none)
-        Running used engine -> 
-            let (tank, res) = run engine gas in
-            case res of 
-                OutOfGas newEngine -> ({ model | state = Running (used + gas) newEngine }, defaultRefuel)
-                Complete v -> ({ model | state = Finished v }, Cmd.none)
-        Stopped used engine -> (model, Cmd.none)
-
-doStop : Model -> Model
-doStop model =
-    case model.state of
-        Inert -> model
-        Finished n -> model
-        Running used engine -> { model | state = Stopped used engine }
-        Stopped used engine -> model
-
-main = Browser.element 
-    { init = \() -> ({ state = Inert, time = Time.millisToPosix 0 }, Cmd.none)
-    , view = \model ->
-        div []
-            [ case model.state of
-                Inert -> button [ onClick Go ] [ text "go" ]
-                Running used f -> div [] [ text "running, used gas: ", String.fromInt used |> text 
-                                         , button [ onClick Stop ] [ text "stop" ]
-                                         ]
-                Stopped used f -> div [] [ text "stopped, used gas: ", String.fromInt used |> text 
-                                         , button [ onClick Go ] [ text "resume" ]
-                                         ]
-                Finished n -> div [] [ text "done @ ", String.fromInt n |> text ]
-            , h1 [] [ model.time |> Time.posixToMillis |> String.fromInt |> text ]
-            ]
-    , update = \msg model -> 
-        case msg of
-            Go -> doGo model
-            Refuel gas -> doRefuel model gas
-            Stop -> (doStop model, Cmd.none)
-            Tick newTime -> ({ model | time = newTime }, Cmd.none)
-    , subscriptions = \model -> Time.every 100 Tick
-    }
