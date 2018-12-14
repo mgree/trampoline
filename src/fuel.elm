@@ -9,6 +9,12 @@ type Fueled a = Thunk (Gas -> Either (Gas,a) (Fueled a)) | Computed a
 
 type RunResult a = OutOfGas (Fueled a) | Complete a
 
+isOutOfGas : RunResult a -> Bool
+isOutOfGas res =
+    case res of
+        OutOfGas _ -> True
+        Complete _ -> False
+    
 type alias Fueled a = Gas -> (Gas, RunResult a)
 
 run : Fueled a -> Gas -> (Gas, RunResult a)
