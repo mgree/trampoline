@@ -7,8 +7,8 @@ import Expect
 import Fuzz
 import Random
 
-upTo2048 : Fuzz.Fuzzer Int
-upTo2048 = Fuzz.intRange 1 2048
+upTo1024 : Fuzz.Fuzzer Int
+upTo1024 = Fuzz.intRange 1 1024
 
 runsTo : Fueled a -> a -> Gas -> Expect.Expectation
 runsTo engine res tank = Expect.equal res (runToCompletion engine tank)
@@ -22,11 +22,11 @@ suite =
     describe "Fuel"
         [
          describe "factorial"
-             [ fuzz upTo2048 "runToCompletion fact 0" <|
+             [ fuzz upTo1024 "runToCompletion fact 0" <|
                    \tank -> runsTo (factorial 0) 1 tank
-             , fuzz upTo2048 "runToCompletion fact 1" <|
+             , fuzz upTo1024 "runToCompletion fact 1" <|
                    \tank -> runsTo (factorial 1) 1 tank
-             , fuzz upTo2048 "runToCompletion fact 5" <|
+             , fuzz upTo1024 "runToCompletion fact 5" <|
                    \tank -> runsTo (factorial 5) 120 tank
              , test "run fact 5 out of gas (1 step)" <|
                    \_ -> run (factorial 5) 1
@@ -44,7 +44,7 @@ suite =
                   \_ -> diverges (diverge 10) 10
             , test "run diverge 0 out of gas (50 steps)" <|
                   \_ -> diverges (diverge 0) 50
-            , fuzz upTo2048 "run diverge 0 out of gas (<=2048 steps)" <|
-                  \gas -> diverges (betterDiverge 0) gas
+            , fuzz upTo1024 "run diverge 0 out of gas (<=1024 steps)" <|
+                  \gas -> diverges (diverge 0) gas
             ]
         ]

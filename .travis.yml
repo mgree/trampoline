@@ -25,4 +25,5 @@ install: # install specific version of elm
   - chmod +x $(npm config get prefix)/bin/elm
 
 script:
+  - elm make src/*.elm
   - elm-test
