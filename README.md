@@ -1,8 +1,8 @@
 Fueled computations in Elm.
 
-The `Fuel` monad allows one to structure computations that use up 'gas', which allows one to write potentially non-terminating code in a relatively direct style.
+The `Fuel` monad allows one to structure computations that use up 'gas', which allows one to write potentially non-terminating code in a relatively direct style. It turns out that these gas-based computations form a monad, so we can define usual functions like `map` and `andThen`.
 
-The `Trampoline` idiom is a way of structuring a program to use `Fuel`: timers or other events trigger fueled computations. (This part isn't written yet, but a version of the idiom is in `src/fuel.elm`.)
+The `Trampoline` idiom is a way of structuring a program to use `Fuel`: timers or other events trigger fueled computations.
 
 # TODO
 
@@ -10,3 +10,5 @@ The `Trampoline` idiom is a way of structuring a program to use `Fuel`: timers o
   + When would we want more or less?
 - We could have fueled computations have a notion of intermediate result.
   + More management in the monad, but would allow for nicer UIs.
+- Tests are badly broken.
+
