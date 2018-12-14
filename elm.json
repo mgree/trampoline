@@ -1,26 +1,27 @@
 {
-    "type": "application",
+    "type": "package",
+    "name": "mgree/trampoline",
+    "summary": "a library for running potentially non-terminating applications",
+    "license": "MIT",
+    "version": "0.1.0",
+    "exposed-modules": [
+        "Fuel",
+        "Trampoline"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
     "source-directories": [
         "src"
     ],
-    "elm-version": "0.19.0",
     "dependencies": {
-        "direct": {
-            "elm/browser": "1.0.1",
-            "elm/core": "1.0.2",
-            "elm/html": "1.0.0",
-            "elm/time": "1.0.0",
-            "elm-explorations/test": "1.2.0"
-        },
-        "indirect": {
-            "elm/json": "1.1.2",
-            "elm/random": "1.0.0",
-            "elm/url": "1.0.0",
-            "elm/virtual-dom": "1.0.2"
-        }
+        "elm/browser": "1.0.1 <= v < 2.0.0",
+        "elm/core": "1.0.2 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/time": "1.0.0 <= v < 2.0.0",
+        "elm-explorations/test": "1.2.0 <= v < 2.0.0",
+        "elm/json": "1.1.2 <= v < 2.0.0",
+        "elm/random": "1.0.0 <= v < 2.0.0",
+        "elm/url": "1.0.0 <= v < 2.0.0",
+        "elm/virtual-dom": "1.0.2 <= v < 2.0.0"
     },
-    "test-dependencies": {
-        "direct": {},
-        "indirect": {}
-    }
+    "test-dependencies": { }
 }
