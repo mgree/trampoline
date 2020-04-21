@@ -1,4 +1,4 @@
-module Trampoline exposing (..)
+module ExampleApp exposing (..)
 
 import Fuel exposing (Gas, Fueled, RunResult(..), run, andThen, return, burn, mkEngine)
 
@@ -9,7 +9,7 @@ import Process
 import Task
 import Time
 
-type Msg = Go | Refuel Gas | Stop | Tick Time.Posix
+type Msg m = Go | Refuel Gas | Stop | Tick Time.Posix | Inner m
 type State a = Inert | Running Gas (Fueled a) | Stopped Gas (Fueled a) | Finished a
 type alias Model a =
   { state : State a
@@ -75,7 +75,7 @@ main = Browser.element
             ]
     , update = \msg model -> 
         case msg of
-            Go -> doGo Fuel.betterDiverge 20 model
+            Go -> doGo Example.betterDiverge 20 model
             Refuel gas -> doRefuel model gas
             Stop -> (doStop model, Cmd.none)
             Tick newTime -> ({ model | time = newTime }, Cmd.none)

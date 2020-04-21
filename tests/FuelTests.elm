@@ -1,6 +1,7 @@
 module FuelTests exposing (..)
 
 import Fuel exposing (..)
+import Example exposing (..)
 
 import Test exposing (..)
 import Expect
