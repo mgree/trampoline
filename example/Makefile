@@ -9,7 +9,7 @@ app/app.js : src/App.elm
 	elm make $< --output=$@
 
 deploy : app/app.min.js
-	(cd .. ; git subtree push --prefix example/app origin gh-pages)
+	(cd .. ; git subtree push --squash --prefix example/app origin gh-pages)
 
 clean :
 	-rm app/app.js app/app.min.js
