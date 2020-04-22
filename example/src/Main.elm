@@ -1,4 +1,4 @@
-module ExampleApp exposing (..)
+module Main exposing (..)
 
 import Trampoline.Fueled exposing (Gas, Fueled, RunResult(..), run, andThen, return, burn, mkEngine)
 import Trampoline.Examples exposing (betterDiverge)
@@ -67,7 +67,8 @@ main = Browser.element
             , p [] [ text "This very simple application demonstrates how the mgree/trampoline library works. When you click the 'go' button, a nonterminating computation will start. You'll see a 'gas' counter indicating how much gas has been used so far. (Each tick of 'gas' represents some amount of computation.) When you click 'stop', the computation will be paused. You can click 'resume' to continue it." ]
             , p [] [ text "Note that the 'milliseconds since epoch' readout below continues to tick whether or not the computation is running. That is, the long-running computation doesn't 'pause' everything else." ]
             , div [] (case model.state of
-                          Inert -> [ button [ onClick Go ] [ text "go" ] ]
+                          Inert -> [ div [] [ text "ready" ]
+                                   , button [ onClick Go ] [ text "go" ] ]
                           Running used f -> [ div [] [ text "running, used gas: ", String.fromInt used |> text ]
                                                    , button [ onClick Stop ] [ text "stop" ]
                                                    ]

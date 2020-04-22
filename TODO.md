@@ -11,3 +11,10 @@
   + [ ] Lambda calculus/Scheme
   
   + [ ] Probability language
+
+- [ ] Higher-order update
+
+- [ ] Add timing information to fueled computations to, e.g.,
+  adaptively set the fuel.
+
+  + When would we want more or less?
