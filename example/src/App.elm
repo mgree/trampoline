@@ -1,6 +1,7 @@
 module ExampleApp exposing (..)
 
-import Fuel exposing (Gas, Fueled, RunResult(..), run, andThen, return, burn, mkEngine)
+import Trampoline.Fueled exposing (Gas, Fueled, RunResult(..), run, andThen, return, burn, mkEngine)
+import Trampoline.Examples exposing (betterDiverge)
 
 import Browser
 import Html exposing (..)
@@ -9,7 +10,7 @@ import Process
 import Task
 import Time
 
-type Msg m = Go | Refuel Gas | Stop | Tick Time.Posix | Inner m
+type Msg = Go | Refuel Gas | Stop | Tick Time.Posix
 type State a = Inert | Running Gas (Fueled a) | Stopped Gas (Fueled a) | Finished a
 type alias Model a =
   { state : State a
@@ -62,20 +63,26 @@ main = Browser.element
     { init = \() -> ({ state = Inert, time = Time.millisToPosix 0 }, Cmd.none)
     , view = \model ->
         div []
-            [ case model.state of
-                Inert -> button [ onClick Go ] [ text "go" ]
-                Running used f -> div [] [ text "running, used gas: ", String.fromInt used |> text 
-                                         , button [ onClick Stop ] [ text "stop" ]
-                                         ]
-                Stopped used f -> div [] [ text "stopped, used gas: ", String.fromInt used |> text 
-                                         , button [ onClick Go ] [ text "resume" ]
-                                         ]
-                Finished n -> div [] [ text "done @ ", String.fromInt n |> text ]
-            , h1 [] [ model.time |> Time.posixToMillis |> String.fromInt |> text ]
+            [ h1 [] [ text "Trampoline example app" ]
+            , p [] [ text "This very simple application demonstrates how the mgree/trampoline library works. When you click the 'go' button, a nonterminating computation will start. You'll see a 'gas' counter indicating how much gas has been used so far. (Each tick of 'gas' represents some amount of computation.) When you click 'stop', the computation will be paused. You can click 'resume' to continue it." ]
+            , p [] [ text "Note that the 'milliseconds since epoch' readout below continues to tick whether or not the computation is running. That is, the long-running computation doesn't 'pause' everything else." ]
+            , div [] (case model.state of
+                          Inert -> [ button [ onClick Go ] [ text "go" ] ]
+                          Running used f -> [ div [] [ text "running, used gas: ", String.fromInt used |> text ]
+                                                   , button [ onClick Stop ] [ text "stop" ]
+                                                   ]
+                          Stopped used f -> [ div [] [ text "stopped, used gas: ", String.fromInt used |> text ]
+                                            , button [ onClick Go ] [ text "resume" ]
+                                            ]
+                          Finished n -> [ text "done @ ", String.fromInt n |> text ])
+            , div []
+                [ text "Milliseconds since epoch (to show we're not paused): "
+                , em [] [ model.time |> Time.posixToMillis |> String.fromInt |> text ]
+                ]
             ]
     , update = \msg model -> 
         case msg of
-            Go -> doGo Example.betterDiverge 20 model
+            Go -> doGo betterDiverge 20 model
             Refuel gas -> doRefuel model gas
             Stop -> (doStop model, Cmd.none)
             Tick newTime -> ({ model | time = newTime }, Cmd.none)

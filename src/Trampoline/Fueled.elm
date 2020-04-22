@@ -1,4 +1,4 @@
-module Fuel exposing (..)
+module Trampoline.Fueled exposing (..)
 
 type alias Gas = Int
 

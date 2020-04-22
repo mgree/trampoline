@@ -1,6 +1,6 @@
-module Example exposing (..)
+module Trampoline.Examples exposing (..)
 
-import Fuel exposing (..)
+import Trampoline.Fueled exposing (..)
 
 countDown : Int -> Fueled Int
 countDown n = burn <|
