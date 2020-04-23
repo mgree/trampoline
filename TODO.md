@@ -1,10 +1,8 @@
-- [ ] Rewrite system version
-
-  type alias Rewriter a o = a -> Either a o
-
-  `run` function just repeatedly calls "gas" times (or until an o comes out)
+- [ ] Convert to rewrite system version
   
-  `fromStepper :: (a -> Maybe a) -> Rewriter a a`
+  related:
+  
+  `type Fueled a = Thunk (Gas -> Either (Gas,a) (Fueled a)) | Computed a`
   
 - [ ] More serious demos
 
@@ -12,9 +10,6 @@
   
   + [ ] Probability language
 
-- [ ] Higher-order update
+- [ ] Way to configure refueling amount and pause time
 
-- [ ] Add timing information to fueled computations to, e.g.,
-  adaptively set the fuel.
-
-  + When would we want more or less?
+- [ ] Add timing information to fueled computations.

@@ -2,11 +2,6 @@ module Trampoline.Fueled exposing (..)
 
 type alias Gas = Int
 
-{-
--- the following is a bit closer to what we want...
-type Fueled a = Thunk (Gas -> Either (Gas,a) (Fueled a)) | Computed a
--}
-
 type RunResult a = OutOfGas (Fueled a) | Complete a
 
 isOutOfGas : RunResult a -> Bool

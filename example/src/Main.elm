@@ -1,92 +1,56 @@
 module Main exposing (..)
 
-import Trampoline.Fueled exposing (Gas, Fueled, RunResult(..), run, andThen, return, burn, mkEngine)
-import Trampoline.Examples exposing (betterDiverge)
-
 import Browser
 import Html exposing (..)
 import Html.Events exposing (onClick)
+import Platform.Sub
 import Process
 import Task
 import Time
 
-type Msg = Go | Refuel Gas | Stop | Tick Time.Posix
-type State a = Inert | Running Gas (Fueled a) | Stopped Gas (Fueled a) | Finished a
-type alias Model a =
-  { state : State a
-  , time : Time.Posix
-  }
+import Trampoline.Fueled exposing (Gas, Fueled, RunResult(..), run, andThen, return, burn, mkEngine)
+import Trampoline.Examples exposing (betterDiverge)
 
--- There's a careful interplay between pauseTime and refuelAmount.
---
--- Make pauseTime too low and no other events get to run... so you can't stop your computation. Bad news.
--- Make pauseTime too high and your fueled computation runs too slowly.
---
--- Make refuelAmount too low and your fueled computation runs too slowly.
--- Make refuelAmount too high and your event loop might get unresponsive.
-refuelCmd : Gas -> Float -> Cmd Msg
-refuelCmd refuelAmount pauseTime = Task.perform (\() -> Refuel refuelAmount) (Process.sleep pauseTime)
+import Trampoline
 
-defaultRefuel : Cmd Msg
-defaultRefuel = refuelCmd 5 20.0
+type AppMsg = Tick Time.Posix
+type alias AppModel =
+    { time : Time.Posix
+    }   
 
-doGo : (b -> Fueled a) -> b -> Model a -> (Model a, Cmd Msg)
-doGo engineFun arg model =
-    case model.state of
-        Inert -> ({ model | state = Running 0 (engineFun arg) }, defaultRefuel)
-        Finished n -> (model, Cmd.none)
-        Running used engine -> (model, Cmd.none)
-        Stopped used engine -> ({ model | state = Running used engine }, defaultRefuel)
-
-doRefuel : Model a -> Gas -> (Model a, Cmd Msg)
-doRefuel model gas =
-    case model.state of
-        Inert -> (model, Cmd.none)
-        Finished n -> (model, Cmd.none)
-        Running used engine -> 
-            let (tank, res) = run engine gas in
-            case res of 
-                OutOfGas newEngine -> ({ model | state = Running (used + gas) newEngine }, defaultRefuel)
-                Complete v -> ({ model | state = Finished v }, Cmd.none)
-        Stopped used engine -> (model, Cmd.none)
-
-doStop : Model a -> Model a
-doStop model =
-    case model.state of
-        Inert -> model
-        Finished n -> model
-        Running used engine -> { model | state = Stopped used engine }
-        Stopped used engine -> model
+type alias Msg = Trampoline.Msg Int AppMsg
+    
+initializeEngineCmd : Cmd Msg
+initializeEngineCmd =
+    Task.perform (\() -> Trampoline.SetEngine (betterDiverge 0)) (Process.sleep 1.0)
 
 -- sample main tying it together
 main = Browser.element 
-    { init = \() -> ({ state = Inert, time = Time.millisToPosix 0 }, Cmd.none)
+    { init = Trampoline.init (\() -> ({ time = Time.millisToPosix 0 }, initializeEngineCmd))
     , view = \model ->
         div []
             [ h1 [] [ text "Trampoline example app" ]
             , p [] [ text "This very simple application demonstrates how the mgree/trampoline library works. When you click the 'go' button, a nonterminating computation will start. You'll see a 'gas' counter indicating how much gas has been used so far. (Each tick of 'gas' represents some amount of computation.) When you click 'stop', the computation will be paused. You can click 'resume' to continue it." ]
             , p [] [ text "Note that the 'milliseconds since epoch' readout below continues to tick whether or not the computation is running. That is, the long-running computation doesn't 'pause' everything else." ]
             , div [] (case model.state of
-                          Inert -> [ div [] [ text "ready" ]
-                                   , button [ onClick Go ] [ text "go" ] ]
-                          Running used f -> [ div [] [ text "running, used gas: ", String.fromInt used |> text ]
-                                                   , button [ onClick Stop ] [ text "stop" ]
-                                                   ]
-                          Stopped used f -> [ div [] [ text "stopped, used gas: ", String.fromInt used |> text ]
-                                            , button [ onClick Go ] [ text "resume" ]
-                                            ]
-                          Finished n -> [ text "done @ ", String.fromInt n |> text ])
+                          Trampoline.Engineless -> [ div [] [ text "loading" ] ]
+                          Trampoline.Idling _ -> [ div [] [ text "ready" ]
+                                                 , button [ onClick Trampoline.Go ] [ text "go" ] ]
+                          Trampoline.Running used f -> [ div [] [ text "running, used gas: ", String.fromInt used |> text ]
+                                                       , button [ onClick Trampoline.Stop ] [ text "stop" ]
+                                                       ]
+                          Trampoline.Stopped used f -> [ div [] [ text "stopped, used gas: ", String.fromInt used |> text ]
+                                                       , button [ onClick Trampoline.Go ] [ text "resume" ]
+                                                       ]
+                          Trampoline.Finished n -> [ text "done @ ", String.fromInt n |> text ])
             , div []
                 [ text "Milliseconds since epoch (to show we're not paused): "
-                , em [] [ model.time |> Time.posixToMillis |> String.fromInt |> text ]
+                , em [] [ model.model.time |> Time.posixToMillis |> String.fromInt |> text ]
                 ]
             ]
-    , update = \msg model -> 
-        case msg of
-            Go -> doGo betterDiverge 20 model
-            Refuel gas -> doRefuel model gas
-            Stop -> (doStop model, Cmd.none)
-            Tick newTime -> ({ model | time = newTime }, Cmd.none)
-    , subscriptions = \model -> Time.every 100 Tick
+    , update = Trampoline.update (\msg model ->
+                                      case msg of
+                                          Tick newTime -> ({ model | time = newTime }, Cmd.none))
+    , subscriptions = \model -> Time.every 100 Tick |> Platform.Sub.map Trampoline.Inner
     }
 
