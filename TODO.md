@@ -6,8 +6,18 @@
   
 - [ ] More serious demos
 
-  + [ ] Lambda calculus/Scheme
+  + [ ] Lambda calculus/Scheme/STLC
   
+    * [x] eval reference function
+
+    * [x] CEK stepper function
+    
+    * [ ] hook up to driver
+    
+    * [ ] tests
+    
+    * [ ] compare with timeout-oriented programming?
+
   + [ ] Probability language
 
 - [ ] Way to configure refueling amount and pause time
