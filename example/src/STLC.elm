@@ -6,6 +6,7 @@ import Dict
 import Result
 
 import Char
+import Set exposing (Set)
 import Set
 import Parser exposing (Parser, symbol, (|.), (|=), succeed, lazy, spaces, keyword)
 import Parser
@@ -173,8 +174,51 @@ evalCEK initialEnv intialE =
 -- PARSER
 ------------------------------------------------------------------------
 
-oneOrMore : Parser a -> Parser sep -> Parser (List a, a)
-oneOrMore parseItem parseSep =
+keywords : Set String
+keywords = Set.singleton "int"
+
+parseType : Parser Type
+parseType =
+    succeed (\(lhs, rhs) -> List.foldr TFun rhs lhs)
+        |= sepByR1 parseAtomicType (spaces |. symbol "->" |. spaces)
+               
+parseAtomicType : Parser Type
+parseAtomicType =
+    succeed identity
+        |. spaces
+        |= Parser.oneOf
+           [ succeed TInt |. keyword "int"
+           , parens (lazy (\_ -> parseType))
+           ]
+
+parseExpr : Parser Expr
+parseExpr =
+    succeed (\(lhs, rhs) -> List.foldl (\r l -> EApp l r) lhs rhs)
+        |= sepByL1 parseAtomicExpr spaces
+
+parseAtomicExpr : Parser Expr
+parseAtomicExpr =
+    succeed identity
+        |. spaces
+        |= Parser.oneOf
+           [ succeed ENum |= Parser.int
+           , succeed EVar |= parseVar
+           , succeed ELam |. symbol "\\" |. spaces |= parseVar |. spaces |. symbol ":" |. spaces |= parseType |. spaces |. symbol "." |. spaces |= lazy (\_ -> parseExpr)
+           , parens (lazy (\_ -> parseExpr))
+           ]
+                 
+parseVar : Parser String
+parseVar = Parser.variable { start = Char.isAlpha
+                           , inner = \c -> Char.isAlphaNum c || c == '_'
+                           , reserved = keywords
+                           }
+
+parens : Parser a -> Parser a
+parens p = succeed identity |. spaces |. symbol "(" |. spaces |= p |. spaces |. symbol ")"
+
+
+sepByR1 : Parser a -> Parser sep -> Parser (List a, a)
+sepByR1 parseItem parseSep =
     let helper items =
             parseItem |>
             Parser.andThen
@@ -184,30 +228,24 @@ oneOrMore parseItem parseSep =
                      , succeed (Parser.Done (items, item))
                      ])
     in
-        Parser.loop [] helper
+        Parser.loop [] helper |>
+        Parser.map (\(items, item) -> (List.reverse items, item))
 
-parseAtomicType : Parser Type
-parseAtomicType =
-    succeed identity
-        |. spaces
-        |= Parser.oneOf
-           [ succeed TInt
-               |. keyword "int"
-           , succeed identity
-               |. symbol "("
-               |. spaces
-               |= lazy (\_ -> parseType)
-               |. spaces
-               |. symbol ")"
-           ]
-
-parseType : Parser Type
-parseType =
-    succeed (\(lhs, rhs) -> List.foldr TFun rhs lhs)
-        |= oneOrMore parseAtomicType (spaces |. symbol "->" |. spaces)
-
-var : Parser String
-var = Parser.variable { start = Char.isAlpha
-                      , inner = \c -> Char.isAlphaNum c || c == '_'
-                      , reserved = Set.empty
-                      }
+sepEndBy : Parser a -> Parser sep -> Parser (List a)
+sepEndBy parseItem parseSep =
+    let helper items =
+            Parser.oneOf
+                [ succeed (\item -> Parser.Loop (item::items))
+                      |= parseItem
+                      |. parseSep
+                , succeed (Parser.Done items)
+                ]
+    in
+        Parser.loop [] helper |>
+        Parser.map List.reverse
+            
+sepByL1 : Parser a -> Parser sep -> Parser (a, List a)
+sepByL1 parseItem parseSep =
+    succeed (\item items -> (item, items))
+            |= parseItem 
+            |= sepEndBy parseItem parseSep           
