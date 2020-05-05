@@ -793,6 +793,66 @@ function _Utils_ap(xs, ys)
 
 
 
+// MATH
+
+var _Basics_add = F2(function(a, b) { return a + b; });
+var _Basics_sub = F2(function(a, b) { return a - b; });
+var _Basics_mul = F2(function(a, b) { return a * b; });
+var _Basics_fdiv = F2(function(a, b) { return a / b; });
+var _Basics_idiv = F2(function(a, b) { return (a / b) | 0; });
+var _Basics_pow = F2(Math.pow);
+
+var _Basics_remainderBy = F2(function(b, a) { return a % b; });
+
+// https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/divmodnote-letter.pdf
+var _Basics_modBy = F2(function(modulus, x)
+{
+	var answer = x % modulus;
+	return modulus === 0
+		? _Debug_crash(11)
+		:
+	((answer > 0 && modulus < 0) || (answer < 0 && modulus > 0))
+		? answer + modulus
+		: answer;
+});
+
+
+// TRIGONOMETRY
+
+var _Basics_pi = Math.PI;
+var _Basics_e = Math.E;
+var _Basics_cos = Math.cos;
+var _Basics_sin = Math.sin;
+var _Basics_tan = Math.tan;
+var _Basics_acos = Math.acos;
+var _Basics_asin = Math.asin;
+var _Basics_atan = Math.atan;
+var _Basics_atan2 = F2(Math.atan2);
+
+
+// MORE MATH
+
+function _Basics_toFloat(x) { return x; }
+function _Basics_truncate(n) { return n | 0; }
+function _Basics_isInfinite(n) { return n === Infinity || n === -Infinity; }
+
+var _Basics_ceiling = Math.ceil;
+var _Basics_floor = Math.floor;
+var _Basics_round = Math.round;
+var _Basics_sqrt = Math.sqrt;
+var _Basics_log = Math.log;
+var _Basics_isNaN = isNaN;
+
+
+// BOOLEANS
+
+function _Basics_not(bool) { return !bool; }
+var _Basics_and = F2(function(a, b) { return a && b; });
+var _Basics_or  = F2(function(a, b) { return a || b; });
+var _Basics_xor = F2(function(a, b) { return a !== b; });
+
+
+
 // TASKS
 
 function _Scheduler_succeed(value)
@@ -994,66 +1054,6 @@ function _Process_sleep(time)
 		return function() { clearTimeout(id); };
 	});
 }
-
-
-
-// MATH
-
-var _Basics_add = F2(function(a, b) { return a + b; });
-var _Basics_sub = F2(function(a, b) { return a - b; });
-var _Basics_mul = F2(function(a, b) { return a * b; });
-var _Basics_fdiv = F2(function(a, b) { return a / b; });
-var _Basics_idiv = F2(function(a, b) { return (a / b) | 0; });
-var _Basics_pow = F2(Math.pow);
-
-var _Basics_remainderBy = F2(function(b, a) { return a % b; });
-
-// https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/divmodnote-letter.pdf
-var _Basics_modBy = F2(function(modulus, x)
-{
-	var answer = x % modulus;
-	return modulus === 0
-		? _Debug_crash(11)
-		:
-	((answer > 0 && modulus < 0) || (answer < 0 && modulus > 0))
-		? answer + modulus
-		: answer;
-});
-
-
-// TRIGONOMETRY
-
-var _Basics_pi = Math.PI;
-var _Basics_e = Math.E;
-var _Basics_cos = Math.cos;
-var _Basics_sin = Math.sin;
-var _Basics_tan = Math.tan;
-var _Basics_acos = Math.acos;
-var _Basics_asin = Math.asin;
-var _Basics_atan = Math.atan;
-var _Basics_atan2 = F2(Math.atan2);
-
-
-// MORE MATH
-
-function _Basics_toFloat(x) { return x; }
-function _Basics_truncate(n) { return n | 0; }
-function _Basics_isInfinite(n) { return n === Infinity || n === -Infinity; }
-
-var _Basics_ceiling = Math.ceil;
-var _Basics_floor = Math.floor;
-var _Basics_round = Math.round;
-var _Basics_sqrt = Math.sqrt;
-var _Basics_log = Math.log;
-var _Basics_isNaN = isNaN;
-
-
-// BOOLEANS
-
-function _Basics_not(bool) { return !bool; }
-var _Basics_and = F2(function(a, b) { return a && b; });
-var _Basics_or  = F2(function(a, b) { return a || b; });
-var _Basics_xor = F2(function(a, b) { return a !== b; });
 
 
 
@@ -4401,18 +4401,14 @@ function _Time_getZoneName()
 		callback(_Scheduler_succeed(name));
 	});
 }
-var author$project$Main$Go = {$: 'Go'};
-var author$project$Main$Inert = {$: 'Inert'};
-var author$project$Main$Stop = {$: 'Stop'};
 var author$project$Main$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
-var author$project$Main$Running = F2(
-	function (a, b) {
-		return {$: 'Running', a: a, b: b};
-	});
-var author$project$Main$Refuel = function (a) {
-	return {$: 'Refuel', a: a};
+var author$project$Trampoline$SetEngine = function (a) {
+	return {$: 'SetEngine', a: a};
+};
+var author$project$Trampoline$Fueled$OutOfGas = function (a) {
+	return {$: 'OutOfGas', a: a};
 };
 var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
 var elm$core$Array$foldr = F3(
@@ -4494,6 +4490,32 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
+var elm$core$Basics$le = _Utils_le;
+var author$project$Trampoline$Fueled$run = F2(
+	function (engine, tank0) {
+		return (tank0 <= 0) ? _Utils_Tuple2(
+			0,
+			author$project$Trampoline$Fueled$OutOfGas(engine)) : engine(tank0);
+	});
+var elm$core$Basics$sub = _Basics_sub;
+var author$project$Trampoline$Fueled$burn = function (engine) {
+	return function (tank0) {
+		return A2(author$project$Trampoline$Fueled$run, engine, tank0 - 1);
+	};
+};
+var author$project$Trampoline$Fueled$mkEngine = function (thunk) {
+	return author$project$Trampoline$Fueled$burn(
+		function (tank0) {
+			return A2(thunk, _Utils_Tuple0, tank0);
+		});
+};
+var elm$core$Basics$add = _Basics_add;
+var author$project$Trampoline$Examples$betterDiverge = function (n) {
+	return author$project$Trampoline$Fueled$mkEngine(
+		function (_n0) {
+			return author$project$Trampoline$Examples$betterDiverge(n + 1);
+		});
+};
 var elm$core$Process$sleep = _Process_sleep;
 var elm$core$Basics$identity = function (x) {
 	return x;
@@ -4503,7 +4525,6 @@ var elm$core$Task$Perform = function (a) {
 };
 var elm$core$Task$succeed = _Scheduler_succeed;
 var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
-var elm$core$Basics$add = _Basics_add;
 var elm$core$Basics$gt = _Utils_gt;
 var elm$core$List$foldl = F3(
 	function (func, acc, list) {
@@ -4718,7 +4739,6 @@ var elm$core$Basics$max = F2(
 		return (_Utils_cmp(x, y) > 0) ? x : y;
 	});
 var elm$core$Basics$mul = _Basics_mul;
-var elm$core$Basics$sub = _Basics_sub;
 var elm$core$Elm$JsArray$length = _JsArray_length;
 var elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
@@ -4772,7 +4792,6 @@ var elm$core$Array$initializeHelp = F5(
 			}
 		}
 	});
-var elm$core$Basics$le = _Utils_le;
 var elm$core$Basics$remainderBy = _Basics_remainderBy;
 var elm$core$Array$initialize = F2(
 	function (len, fn) {
@@ -5041,69 +5060,94 @@ var elm$core$Task$perform = F2(
 			elm$core$Task$Perform(
 				A2(elm$core$Task$map, toMessage, task)));
 	});
-var author$project$Main$refuelCmd = F2(
+var author$project$Main$initializeEngineCmd = A2(
+	elm$core$Task$perform,
+	function (_n0) {
+		return author$project$Trampoline$SetEngine(
+			author$project$Trampoline$Examples$betterDiverge(0));
+	},
+	elm$core$Process$sleep(1.0));
+var author$project$Trampoline$Go = {$: 'Go'};
+var author$project$Trampoline$Inner = function (a) {
+	return {$: 'Inner', a: a};
+};
+var author$project$Trampoline$Stop = {$: 'Stop'};
+var author$project$Trampoline$Engineless = {$: 'Engineless'};
+var author$project$Trampoline$init = F2(
+	function (initInner, flags) {
+		var _n0 = initInner(flags);
+		var inner = _n0.a;
+		var cmds = _n0.b;
+		return _Utils_Tuple2(
+			{model: inner, state: author$project$Trampoline$Engineless},
+			cmds);
+	});
+var author$project$Trampoline$Idling = function (a) {
+	return {$: 'Idling', a: a};
+};
+var author$project$Trampoline$Running = F2(
+	function (a, b) {
+		return {$: 'Running', a: a, b: b};
+	});
+var author$project$Trampoline$Refuel = function (a) {
+	return {$: 'Refuel', a: a};
+};
+var author$project$Trampoline$refuelCmd = F2(
 	function (refuelAmount, pauseTime) {
 		return A2(
 			elm$core$Task$perform,
 			function (_n0) {
-				return author$project$Main$Refuel(refuelAmount);
+				return author$project$Trampoline$Refuel(refuelAmount);
 			},
 			elm$core$Process$sleep(pauseTime));
 	});
-var author$project$Main$defaultRefuel = A2(author$project$Main$refuelCmd, 5, 20.0);
+var author$project$Trampoline$defaultRefuel = A2(author$project$Trampoline$refuelCmd, 5, 20.0);
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Main$doGo = F3(
-	function (engineFun, arg, model) {
-		var _n0 = model.state;
-		switch (_n0.$) {
-			case 'Inert':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							state: A2(
-								author$project$Main$Running,
-								0,
-								engineFun(arg))
-						}),
-					author$project$Main$defaultRefuel);
-			case 'Finished':
-				var n = _n0.a;
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 'Running':
-				var used = _n0.a;
-				var engine = _n0.b;
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			default:
-				var used = _n0.a;
-				var engine = _n0.b;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							state: A2(author$project$Main$Running, used, engine)
-						}),
-					author$project$Main$defaultRefuel);
-		}
-	});
-var author$project$Main$Finished = function (a) {
+var author$project$Trampoline$doGo = function (model) {
+	var _n0 = model.state;
+	switch (_n0.$) {
+		case 'Engineless':
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		case 'Idling':
+			var engine = _n0.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{
+						state: A2(author$project$Trampoline$Running, 0, engine)
+					}),
+				author$project$Trampoline$defaultRefuel);
+		case 'Finished':
+			var n = _n0.a;
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		case 'Running':
+			var used = _n0.a;
+			var engine = _n0.b;
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		default:
+			var used = _n0.a;
+			var engine = _n0.b;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{
+						state: A2(author$project$Trampoline$Running, used, engine)
+					}),
+				author$project$Trampoline$defaultRefuel);
+	}
+};
+var author$project$Trampoline$Finished = function (a) {
 	return {$: 'Finished', a: a};
 };
-var author$project$Trampoline$Fueled$OutOfGas = function (a) {
-	return {$: 'OutOfGas', a: a};
-};
-var author$project$Trampoline$Fueled$run = F2(
-	function (engine, tank0) {
-		return (tank0 <= 0) ? _Utils_Tuple2(
-			0,
-			author$project$Trampoline$Fueled$OutOfGas(engine)) : engine(tank0);
-	});
-var author$project$Main$doRefuel = F2(
+var author$project$Trampoline$doRefuel = F2(
 	function (model, gas) {
 		var _n0 = model.state;
 		switch (_n0.$) {
-			case 'Inert':
+			case 'Engineless':
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			case 'Idling':
+				var engine = _n0.a;
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 			case 'Finished':
 				var n = _n0.a;
@@ -5120,16 +5164,16 @@ var author$project$Main$doRefuel = F2(
 						_Utils_update(
 							model,
 							{
-								state: A2(author$project$Main$Running, used + gas, newEngine)
+								state: A2(author$project$Trampoline$Running, used + gas, newEngine)
 							}),
-						author$project$Main$defaultRefuel);
+						author$project$Trampoline$defaultRefuel);
 				} else {
 					var v = res.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
-								state: author$project$Main$Finished(v)
+								state: author$project$Trampoline$Finished(v)
 							}),
 						elm$core$Platform$Cmd$none);
 				}
@@ -5139,14 +5183,17 @@ var author$project$Main$doRefuel = F2(
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Main$Stopped = F2(
+var author$project$Trampoline$Stopped = F2(
 	function (a, b) {
 		return {$: 'Stopped', a: a, b: b};
 	});
-var author$project$Main$doStop = function (model) {
+var author$project$Trampoline$doStop = function (model) {
 	var _n0 = model.state;
 	switch (_n0.$) {
-		case 'Inert':
+		case 'Engineless':
+			return model;
+		case 'Idling':
+			var engine = _n0.a;
 			return model;
 		case 'Finished':
 			var n = _n0.a;
@@ -5157,7 +5204,7 @@ var author$project$Main$doStop = function (model) {
 			return _Utils_update(
 				model,
 				{
-					state: A2(author$project$Main$Stopped, used, engine)
+					state: A2(author$project$Trampoline$Stopped, used, engine)
 				});
 		default:
 			var used = _n0.a;
@@ -5165,23 +5212,39 @@ var author$project$Main$doStop = function (model) {
 			return model;
 	}
 };
-var author$project$Trampoline$Fueled$burn = function (engine) {
-	return function (tank0) {
-		return A2(author$project$Trampoline$Fueled$run, engine, tank0 - 1);
-	};
-};
-var author$project$Trampoline$Fueled$mkEngine = function (thunk) {
-	return author$project$Trampoline$Fueled$burn(
-		function (tank0) {
-			return A2(thunk, _Utils_Tuple0, tank0);
-		});
-};
-var author$project$Trampoline$Examples$betterDiverge = function (n) {
-	return author$project$Trampoline$Fueled$mkEngine(
-		function (_n0) {
-			return author$project$Trampoline$Examples$betterDiverge(n + 1);
-		});
-};
+var author$project$Trampoline$update = F3(
+	function (updateInner, msg, model) {
+		switch (msg.$) {
+			case 'SetEngine':
+				var engine = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							state: author$project$Trampoline$Idling(engine)
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'Go':
+				return author$project$Trampoline$doGo(model);
+			case 'Refuel':
+				var gas = msg.a;
+				return A2(author$project$Trampoline$doRefuel, model, gas);
+			case 'Stop':
+				return _Utils_Tuple2(
+					author$project$Trampoline$doStop(model),
+					elm$core$Platform$Cmd$none);
+			default:
+				var msgInner = msg.a;
+				var _n1 = A2(updateInner, msgInner, model.model);
+				var modelInnerNew = _n1.a;
+				var cmds = _n1.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{model: modelInnerNew}),
+					cmds);
+		}
+	});
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
 };
@@ -5345,6 +5408,7 @@ var elm$url$Url$fromString = function (str) {
 		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
 };
 var elm$browser$Browser$element = _Browser_element;
+var elm$core$Platform$Sub$map = _Platform_map;
 var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$em = _VirtualDom_node('em');
@@ -5790,38 +5854,30 @@ var elm$time$Time$posixToMillis = function (_n0) {
 };
 var author$project$Main$main = elm$browser$Browser$element(
 	{
-		init: function (_n0) {
-			return _Utils_Tuple2(
-				{
-					state: author$project$Main$Inert,
-					time: elm$time$Time$millisToPosix(0)
-				},
-				elm$core$Platform$Cmd$none);
-		},
-		subscriptions: function (model) {
-			return A2(elm$time$Time$every, 100, author$project$Main$Tick);
-		},
-		update: F2(
-			function (msg, model) {
-				switch (msg.$) {
-					case 'Go':
-						return A3(author$project$Main$doGo, author$project$Trampoline$Examples$betterDiverge, 20, model);
-					case 'Refuel':
-						var gas = msg.a;
-						return A2(author$project$Main$doRefuel, model, gas);
-					case 'Stop':
-						return _Utils_Tuple2(
-							author$project$Main$doStop(model),
-							elm$core$Platform$Cmd$none);
-					default:
-						var newTime = msg.a;
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{time: newTime}),
-							elm$core$Platform$Cmd$none);
-				}
+		init: author$project$Trampoline$init(
+			function (_n0) {
+				return _Utils_Tuple2(
+					{
+						time: elm$time$Time$millisToPosix(0)
+					},
+					author$project$Main$initializeEngineCmd);
 			}),
+		subscriptions: function (model) {
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Trampoline$Inner,
+				A2(elm$time$Time$every, 100, author$project$Main$Tick));
+		},
+		update: author$project$Trampoline$update(
+			F2(
+				function (msg, model) {
+					var newTime = msg.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{time: newTime}),
+						elm$core$Platform$Cmd$none);
+				})),
 		view: function (model) {
 			return A2(
 				elm$html$Html$div,
@@ -5855,7 +5911,18 @@ var author$project$Main$main = elm$browser$Browser$element(
 						function () {
 							var _n2 = model.state;
 							switch (_n2.$) {
-								case 'Inert':
+								case 'Engineless':
+									return _List_fromArray(
+										[
+											A2(
+											elm$html$Html$div,
+											_List_Nil,
+											_List_fromArray(
+												[
+													elm$html$Html$text('loading')
+												]))
+										]);
+								case 'Idling':
 									return _List_fromArray(
 										[
 											A2(
@@ -5869,7 +5936,7 @@ var author$project$Main$main = elm$browser$Browser$element(
 											elm$html$Html$button,
 											_List_fromArray(
 												[
-													elm$html$Html$Events$onClick(author$project$Main$Go)
+													elm$html$Html$Events$onClick(author$project$Trampoline$Go)
 												]),
 											_List_fromArray(
 												[
@@ -5894,7 +5961,7 @@ var author$project$Main$main = elm$browser$Browser$element(
 											elm$html$Html$button,
 											_List_fromArray(
 												[
-													elm$html$Html$Events$onClick(author$project$Main$Stop)
+													elm$html$Html$Events$onClick(author$project$Trampoline$Stop)
 												]),
 											_List_fromArray(
 												[
@@ -5919,7 +5986,7 @@ var author$project$Main$main = elm$browser$Browser$element(
 											elm$html$Html$button,
 											_List_fromArray(
 												[
-													elm$html$Html$Events$onClick(author$project$Main$Go)
+													elm$html$Html$Events$onClick(author$project$Trampoline$Go)
 												]),
 											_List_fromArray(
 												[
@@ -5949,7 +6016,7 @@ var author$project$Main$main = elm$browser$Browser$element(
 									[
 										elm$html$Html$text(
 										elm$core$String$fromInt(
-											elm$time$Time$posixToMillis(model.time)))
+											elm$time$Time$posixToMillis(model.model.time)))
 									]))
 							]))
 					]));
