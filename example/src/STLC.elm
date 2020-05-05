@@ -1,14 +1,35 @@
 module STLC exposing (..)
 
 import Dict exposing (Dict)
-import Dict as Dict
+import Dict
 
-import Result as Result
+import Result
+
+import Char
+import Set
+import Parser exposing (Parser, symbol, (|.), (|=), succeed, lazy, spaces, keyword)
+import Parser
+
+------------------------------------------------------------------------
+-- EXPRESSIONS AND TYPES
+------------------------------------------------------------------------
 
 type alias VarName = String
 
 type Type = TInt | TFun Type Type
 
+type Expr = EVar VarName
+          | ENum Int
+          | ELam VarName Type Expr
+          | EApp Expr Expr
+
+eID : Type -> Expr
+eID ty = ELam "x" ty (EVar "x")
+
+------------------------------------------------------------------------
+-- TYPE CHECKING
+------------------------------------------------------------------------
+            
 type alias Ctx = Dict VarName Type
 
 emptyCtx : Ctx
@@ -19,30 +40,11 @@ lookupType g x = Dict.get x g
 
 extendType : Ctx -> VarName -> Type -> Ctx             
 extendType g x ty = Dict.insert x ty g
-             
-type Expr = EVar VarName
-          | ENum Int
-          | ELam VarName Type Expr
-          | EApp Expr Expr
 
-type Value = VNum Int
-           | VClo VarName Type Expr Env
-
-type alias Env = Dict VarName Value
-
-emptyEnv : Env
-emptyEnv = Dict.empty
-
-lookupVal : Env -> VarName -> Maybe Value
-lookupVal env x = Dict.get x env
-            
-extendVal : Env -> VarName -> Value -> Env
-extendVal env x v = Dict.insert x v env
-    
 type TypeError = NoSuchVariable VarName
                | ExpectedFunction Type Expr
                | ApplicationMismatch Type Expr Type Expr
-    
+
 typeOf : Ctx -> Expr -> Result TypeError Type
 typeOf g e =
     case e of
@@ -64,6 +66,24 @@ typeOf g e =
                     else Err (ApplicationMismatch ty11 e1 ty2 e2)
                 (Ok ty1, _) -> Err (ExpectedFunction ty1 e1)
 
+------------------------------------------------------------------------
+-- CONVENTIONAL, RECURSIVE INTERPRETER
+------------------------------------------------------------------------
+                 
+type Value = VNum Int
+           | VClo VarName Type Expr Env
+
+type alias Env = Dict VarName Value
+
+emptyEnv : Env
+emptyEnv = Dict.empty
+
+lookupVal : Env -> VarName -> Maybe Value
+lookupVal env x = Dict.get x env
+            
+extendVal : Env -> VarName -> Value -> Env
+extendVal env x v = Dict.insert x v env
+        
 type RunError = UndefinedVariable VarName
               | AppliedNonFunction Value Expr
 
@@ -83,9 +103,10 @@ eval env e =
                         Ok v2 -> eval (extendVal envClo x v2) eBody
                 Ok v1 -> Err (AppliedNonFunction v1 e2)
 
-eID : Type -> Expr
-eID ty = ELam "x" ty (EVar "x")
-
+------------------------------------------------------------------------
+-- CEK MACHINE/STEPPER
+------------------------------------------------------------------------
+         
 type Kont = KEmpty
           | KAppL Expr Kont {- evaluating function, holds unevaluated argument -}
           | KAppR VarName Type Expr Env Kont
@@ -148,3 +169,45 @@ evalCEK initialEnv intialE =
         loop (mkConfig initialEnv intialE)
 
                         
+------------------------------------------------------------------------
+-- PARSER
+------------------------------------------------------------------------
+
+oneOrMore : Parser a -> Parser sep -> Parser (List a, a)
+oneOrMore parseItem parseSep =
+    let helper items =
+            parseItem |>
+            Parser.andThen
+                (\item ->
+                     Parser.oneOf
+                     [ succeed (Parser.Loop (item::items)) |. parseSep
+                     , succeed (Parser.Done (items, item))
+                     ])
+    in
+        Parser.loop [] helper
+
+parseAtomicType : Parser Type
+parseAtomicType =
+    succeed identity
+        |. spaces
+        |= Parser.oneOf
+           [ succeed TInt
+               |. keyword "int"
+           , succeed identity
+               |. symbol "("
+               |. spaces
+               |= lazy (\_ -> parseType)
+               |. spaces
+               |. symbol ")"
+           ]
+
+parseType : Parser Type
+parseType =
+    succeed (\(lhs, rhs) -> List.foldr TFun rhs lhs)
+        |= oneOrMore parseAtomicType (spaces |. symbol "->" |. spaces)
+
+var : Parser String
+var = Parser.variable { start = Char.isAlpha
+                      , inner = \c -> Char.isAlphaNum c || c == '_'
+                      , reserved = Set.empty
+                      }
