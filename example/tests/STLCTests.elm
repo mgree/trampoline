@@ -35,6 +35,7 @@ suite =
             , parsesAs parseType "int->(int->int)" (TFun TInt (TFun TInt TInt))
             , parsesAs parseType "((int->(int->int)))" (TFun TInt (TFun TInt TInt))
             , parsesAs parseType "int->(int->int)->int" (TFun TInt (TFun (TFun TInt TInt) TInt))
+            , fuzz fuzzType "random type round-trip" (\ty -> expectParse parseType (stringOfType ty) ty)
             ]
         , describe "parseExpr"
             [ parsesAs parseExpr "x" (EVar "x")
@@ -49,3 +50,14 @@ suite =
         , describe "eval" []
         , describe "evalCEK" [] -}
         ]
+
+fuzzType : Fuzz.Fuzzer Type
+fuzzType =
+    let build i =
+            if i <= 0
+            then Fuzz.constant TInt
+            else Fuzz.frequency [ (1, Fuzz.constant TInt)
+                                , (2, Fuzz.map2 TFun (build (i - 1)) (build (i - 1)))
+                                ]
+    in
+        build 5

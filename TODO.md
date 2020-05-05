@@ -11,13 +11,21 @@
     * [x] eval reference function
 
     * [x] CEK stepper function
-    
-    * [ ] hook up to driver
-    
+
     * [ ] tests
     
-    * [ ] compare with timeout-oriented programming?
+      random generator for exprs, test parser
+      
+      random generator of well typed exprs
+      
+      typechecker, evaluator 
+        
+    * [ ] hook up to driver
 
+    * [ ] add operations on ints
+    
+    * [ ] compare with timeout-oriented programming?
+    
   + [ ] Probability language
 
 - [ ] Way to configure refueling amount and pause time

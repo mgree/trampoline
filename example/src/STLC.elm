@@ -27,6 +27,12 @@ type Expr = EVar VarName
 eID : Type -> Expr
 eID ty = ELam "x" ty (EVar "x")
 
+stringOfType : Type -> String
+stringOfType ty =
+    case ty of
+        TFun lhs rhs -> "(" ++ stringOfType lhs ++ ") -> " ++ stringOfType rhs
+        TInt -> "int"
+
 ------------------------------------------------------------------------
 -- TYPE CHECKING
 ------------------------------------------------------------------------
