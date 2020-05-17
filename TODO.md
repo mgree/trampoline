@@ -19,8 +19,16 @@
       random generator of well typed exprs
       
       typechecker, evaluator 
-        
-    * [ ] hook up to driver
+
+    * [ ] source location information (see https://package.elm-lang.org/packages/elm/parser/latest/Parser#getPosition)
+
+    * [ ] hook up to driver:
+          
+          option to disable typechecking
+          
+          stepping
+          
+          interrupt button
 
     * [ ] add operations on ints
     
