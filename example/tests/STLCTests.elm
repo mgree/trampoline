@@ -40,7 +40,7 @@ suite =
             , parsesAs parseType "int->(int->int)" (TFun TInt (TFun TInt TInt))
             , parsesAs parseType "((int->(int->int)))" (TFun TInt (TFun TInt TInt))
             , parsesAs parseType "int->(int->int)->int" (TFun TInt (TFun (TFun TInt TInt) TInt))
-            , fuzz fuzzType "random type round-trip" (\ty -> expectParse parseType (stringOfType ty) ty)
+            , fuzz fuzzType "random type round-trip" (\ty -> expectParse parseType (typeToString ty) ty)
             ]
         , describe "parseExpr"
             [ parsesAs parseExpr "x" (EVar "x")

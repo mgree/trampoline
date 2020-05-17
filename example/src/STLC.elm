@@ -1,15 +1,169 @@
 module STLC exposing (..)
 
+import Char
 import Dict exposing (Dict)
 import Dict
-
 import Result
-
-import Char
 import Set exposing (Set)
 import Set
+
 import Parser exposing (Parser, symbol, (|.), (|=), succeed, lazy, spaces, keyword)
 import Parser
+
+import Browser
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onInput)
+
+import Trampoline as T
+
+------------------------------------------------------------------------
+-- DRIVER
+------------------------------------------------------------------------
+
+type Msg = SetProgramText String
+
+type ProgramState = PSUnparsed (List Parser.DeadEnd)
+                  | PSIllTyped Expr TypeError
+                  | PSTypeChecked Expr Type
+
+type RunState = RSUnstarted
+              | RSRunning Expr (Maybe Type)
+              | RSCompleted Expr (Maybe Type) Value
+
+                    
+type alias Model =
+    { programText : String
+    , programState : ProgramState
+    , runState : RunState
+    }
+
+withProgramText : String -> Model -> Model
+withProgramText programText model =
+    let programState =
+            case Parser.run parseExpr programText of
+                Err err -> PSUnparsed err
+                Ok expr ->
+                    case typeOf emptyCtx expr of
+                        Err err -> PSIllTyped expr err
+                        Ok ty -> PSTypeChecked expr ty
+    in
+        { model
+            | programText = programText
+            , programState = programState
+        }
+    
+main = Browser.element { init = init
+                       , view = view
+                       , update = update
+                       , subscriptions = subscriptions
+                       }
+
+init : () -> (Model, Cmd Msg)       
+init () = (initialModel, Cmd.none)
+
+initialModel : Model
+initialModel = { programText = ""
+               , programState = PSUnparsed []
+               , runState = RSUnstarted
+               }
+
+subscriptions : Model -> Sub Msg
+subscriptions model = Sub.none
+
+update : Msg -> Model -> (Model, Cmd Msg)               
+update msg model =
+    case msg of
+        SetProgramText programText -> (model |> withProgramText programText, Cmd.none)
+
+view : Model -> Html Msg
+view model =
+    div []
+    [ h1 [] [text "STLC interpreter"]
+    , div []
+        [ textarea [ id "program"
+                   , rows 15
+                   , style "width" "100%"
+                   , onInput SetProgramText
+                   ]
+              [ text model.programText ]
+        , div [ id "programstate" ]
+              [ viewProgramState model.programState ]
+        ]
+    ]
+
+viewProgramState : ProgramState -> Html Msg
+viewProgramState programState =
+    case programState of
+        PSUnparsed err ->
+            div [ class "error" ]
+                [ span [] [ text "Parse error:" ]
+                , span [] [ text <| deadEndsToString err ]
+                ]
+        PSIllTyped expr err ->
+            div [ class "error" ]
+                [ span [] [ text "Type error: " ]
+                , span [] [ text <| typeErrorToString err ]
+                ]
+        PSTypeChecked expr ty ->
+            div [ class "success" ]
+                [ span [] [ text ("Well typed: " ++ typeToString ty) ]
+                ]
+
+deadEndsToString : List Parser.DeadEnd -> String
+deadEndsToString deadEnds =
+    let
+        deadEndToString : Parser.DeadEnd -> String
+        deadEndToString deadEnd =
+            let
+                position : String
+                position =
+                    "row:" ++ String.fromInt deadEnd.row ++ " col:" ++ String.fromInt deadEnd.col ++ "\n"
+            in
+            case deadEnd.problem of
+                Parser.Expecting str ->
+                    "Expecting " ++ str ++ "at " ++ position
+
+                Parser.ExpectingInt ->
+                    "Expecting integer at " ++ position
+
+                Parser.ExpectingHex ->
+                    "Expecting hexadecimal number at " ++ position
+
+                Parser.ExpectingOctal ->
+                    "Expecting octal number at " ++ position
+
+                Parser.ExpectingBinary ->
+                    "Expecting binary at " ++ position
+
+                Parser.ExpectingFloat ->
+                    "Expecting float at " ++ position
+
+                Parser.ExpectingNumber ->
+                    "Expecting number at " ++ position
+
+                Parser.ExpectingVariable ->
+                    "Expecting variable at " ++ position
+
+                Parser.ExpectingSymbol str ->
+                    "Expecting symbol " ++ str ++ " at " ++ position
+
+                Parser.ExpectingKeyword str ->
+                    "Expecting keyword " ++ str ++ "at " ++ position
+
+                Parser.ExpectingEnd ->
+                    "Expecting end of input at " ++ position
+
+                Parser.UnexpectedChar ->
+                    "Unexpected character at " ++ position
+
+                Parser.Problem str ->
+                    "Error: " ++ str ++ " at " ++ position
+
+                Parser.BadRepeat ->
+                    "Internal error (BadRepeat) at " ++ position
+    in
+    List.foldl (++) "" (List.map deadEndToString deadEnds)
 
 ------------------------------------------------------------------------
 -- EXPRESSIONS AND TYPES
@@ -27,11 +181,45 @@ type Expr = EVar VarName
 eID : Type -> Expr
 eID ty = ELam "x" ty (EVar "x")
 
-stringOfType : Type -> String
-stringOfType ty =
-    case ty of
-        TFun lhs rhs -> "(" ++ stringOfType lhs ++ ") -> " ++ stringOfType rhs
-        TInt -> "int"
+typeToString : Type -> String
+typeToString ty =
+    let
+        funToString tyOuter =
+            case tyOuter of
+                TFun lhs rhs -> baseToString lhs ++ " -> " ++ funToString rhs
+                _ -> baseToString tyOuter
+
+        baseToString tyOuter =
+            case tyOuter of
+                TInt -> "int"
+                _ -> "(" ++ funToString tyOuter ++ ")"
+    in
+        funToString ty
+
+exprToString : Expr -> String
+exprToString expr =
+    let
+        lambdaToString eOuter =
+            case eOuter of
+                ELam x ty1 eBody ->
+                    "\\" ++ x ++ ":" ++ typeToString ty1 ++ ". " ++ exprToString eBody
+
+                _ -> appToString eOuter
+
+        appToString eOuter =
+            case eOuter of
+                EApp e1 e2 -> appToString e1 ++ " " ++ atomToString e2
+                _ -> atomToString eOuter
+
+        atomToString eOuter = 
+            case eOuter of
+                EVar x -> x
+
+                ENum n -> String.fromInt n
+
+                _ -> "(" ++ lambdaToString eOuter ++ ")"
+    in
+        lambdaToString expr                            
 
 ------------------------------------------------------------------------
 -- TYPE CHECKING
@@ -52,6 +240,18 @@ type TypeError = NoSuchVariable VarName
                | ExpectedFunction Type Expr
                | ApplicationMismatch Type Expr Type Expr
 
+typeErrorToString : TypeError -> String
+typeErrorToString err =
+    case err of
+        NoSuchVariable x -> "No such variable " ++ x
+        ExpectedFunction ty e ->
+            "Expected " ++ exprToString e ++
+                " to be a function, but it has type " ++ typeToString ty
+        ApplicationMismatch ty11 e1 ty2 e2 ->
+            exprToString e1 ++ " expects an argument of type " ++ typeToString ty11 ++
+                " but " ++ exprToString e2 ++ " has type " ++ typeToString ty2
+
+                 
 typeOf : Ctx -> Expr -> Result TypeError Type
 typeOf g e =
     case e of
