@@ -1,5 +1,6 @@
 module FuelTests exposing (..)
 
+import Trampoline exposing (..)
 import Trampoline.Fueled exposing (..)
 import Trampoline.Examples exposing (..)
 
