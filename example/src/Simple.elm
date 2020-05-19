@@ -13,6 +13,8 @@ import Trampoline.Fueled exposing (Fueled, RunResult(..), run, andThen, return, 
 import Trampoline.Examples exposing (betterDiverge)
 
 type AppMsg = Tick Time.Posix
+            | Finished Int
+              
 type alias AppModel =
     { time : Time.Posix
     }   
@@ -49,9 +51,12 @@ main = Browser.element
                 , em [] [ model.model.time |> Time.posixToMillis |> String.fromInt |> text ]
                 ]
             ]
-    , update = T.update (\msg model ->
-                             case msg of
-                                 Tick newTime -> ({ model | time = newTime }, Cmd.none))
+    , update = T.update
+               (\msg model ->
+                    case msg of
+                        Tick newTime -> ({ model | time = newTime }, Cmd.none)
+                        Finished _ -> (model, Cmd.none) {- YIKES -})
+               Finished
     , subscriptions = T.subscriptions (\model -> Time.every 100 Tick)
     }
 

@@ -23,7 +23,6 @@ type StepResult a o = Stepping a | Done o
 
 type alias Stepper a o = a -> StepResult a o
 
-
 type alias Gas = Int
     
 type Msg a o msg = SetInput a AndGo | Go | Refuel Gas | Stop | Inner msg
@@ -38,11 +37,13 @@ type State a o = NoInput
 
 type alias Stats =
     { numSteps : Gas
+    , totalSteps : Gas
     }
 
 emptyStats : Stats
 emptyStats =
-    { numSteps = 0
+    { numSteps   = 0
+    , totalSteps = 0
     }
     
 type alias Model a o model =
@@ -92,13 +93,18 @@ doGo model =
         Running  a -> (model, Cmd.none)
         Stopped  a -> ({ model | state = Running a }, defaultRefuel)
 
+resetSteps : Model a o model -> Model a o model
+resetSteps model =
+    let stats = model.stats in
+    { model | stats = { stats | numSteps = 0 } }
+                      
 countSteps : Gas -> Model a o model -> Model a o model
 countSteps steps model =
     let stats = model.stats in
-    { model | stats = { stats | numSteps = stats.numSteps + steps } }
+    { model | stats = { stats | numSteps = stats.numSteps + steps, totalSteps = stats.totalSteps + steps } }
         
-keepStepping : Model a o model -> Gas -> (Model a o model, Cmd (Msg a o msg))
-keepStepping model gas =
+keepStepping : Model a o model -> Gas -> (msg -> model -> (model, Cmd (Msg a o msg))) -> (o -> msg) -> (Model a o model, Cmd (Msg a o msg))
+keepStepping model gas updateInner notify =
     case model.state of
         NoInput -> (model, Cmd.none)
         HasInput a -> (model, Cmd.none)
@@ -109,7 +115,10 @@ keepStepping model gas =
                     then ({ model | state = Running arg } |> countSteps gas, defaultRefuel)
                     else case model.stepper arg of
                              Stepping newArg -> loop (n+1) newArg
-                             Done o -> ({ model | state = Finished o } |> countSteps (n+1), Cmd.none)
+                             Done o ->
+                                 let finishedModel = { model | state = Finished o } |> countSteps (n+1) in
+                                 let (modelInnerNew, cmds) = updateInner (notify o) finishedModel.model in
+                                 ({ finishedModel | model = modelInnerNew }, cmds)
             in
                 loop 0 a
         Stopped a -> (model, Cmd.none)
@@ -123,14 +132,17 @@ doStop model =
         Running a -> { model | state = Stopped a }
         Stopped a -> model
                 
-update : (msg -> model -> (model, Cmd (Msg a o msg))) ->
+update : (msg -> model -> (model, Cmd (Msg a o msg))) -> (o -> msg) ->
          Msg a o msg -> Model a o model -> (Model a o model, Cmd (Msg a o msg))
-update updateInner msg model =
+update updateInner notify msg model =
     case msg of
-        SetInput a AndGo -> ({ model | state = Running a }, Cmd.none)
-        SetInput a AndWait -> ({ model | state = HasInput a }, Cmd.none)
+        SetInput a andGo ->
+            let inputModel = { model | state = HasInput a } in
+            case andGo of
+                AndGo -> update updateInner notify Go inputModel
+                AndWait -> (inputModel, defaultRefuel)
         Go -> doGo model
-        Refuel gas -> keepStepping model gas
+        Refuel gas -> keepStepping model gas updateInner notify
         Stop -> (doStop model, Cmd.none)
         Inner msgInner ->
             let (modelInnerNew, cmds) = updateInner msgInner model.model in

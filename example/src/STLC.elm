@@ -22,6 +22,7 @@ import Trampoline as T
 ------------------------------------------------------------------------
 
 type AppMsg = SetProgramText String
+            | ProgramFinished (Result RunError Value)
 
 type ProgramState = PSUnparsed (List Parser.DeadEnd)
                   | PSIllTyped Expr TypeError
@@ -30,6 +31,7 @@ type ProgramState = PSUnparsed (List Parser.DeadEnd)
 type alias AppModel =
     { programText : String
     , programState : ProgramState
+    , result : Maybe (Result RunError Value)
     }
 
 withProgramText : String -> AppModel -> AppModel
@@ -47,6 +49,9 @@ withProgramText programText model =
             , programState = programState
         }
 
+withResult : Result RunError Value -> AppModel -> AppModel
+withResult res model = { model | result = Just res }
+
 type alias Msg = T.Msg Config (Result RunError Value) AppMsg
 
 type alias Model = T.Model Config (Result RunError Value) AppModel    
@@ -55,7 +60,7 @@ main =
     Browser.element
         { init = T.init init step
         , view = view
-        , update = T.update update
+        , update = T.update update ProgramFinished
         , subscriptions = T.subscriptions subscriptions
         }
 
@@ -63,8 +68,9 @@ init : () -> (AppModel, Cmd Msg)
 init () = (initialModel, Cmd.none)
 
 initialModel : AppModel
-initialModel = { programText = ""
+initialModel = { programText  = ""
                , programState = PSUnparsed []
+               , result       = Nothing
                }
                
 subscriptions : AppModel -> Sub AppMsg
@@ -74,6 +80,7 @@ update : AppMsg -> AppModel -> (AppModel, Cmd Msg)
 update msg model =
     case msg of
         SetProgramText programText -> (model |> withProgramText programText, Cmd.none)
+        ProgramFinished res -> (model |> withResult res, Cmd.none)
 
 view : Model -> Html Msg
 view model =
@@ -89,7 +96,16 @@ view model =
         , div [ id "programstate" ]
               [ viewProgramState model.model.programState ]
         , div [ id "runstate" ]
-              [ viewRunState model ]
+              [ div [ id "totalsteps" ]
+                  [ text "Total steps: "
+                  , text <| String.fromInt model.stats.totalSteps
+                  ]
+              , viewRunState model
+              ]
+        , div [ id "result" ]
+              ( case model.model.result of
+                    Nothing -> []
+                    Just res -> [ viewResult res ])
         ]
     , viewGrammar
     ]
@@ -128,18 +144,23 @@ viewRunState model =
                                  , text <| configToString cfg
                                  , input [ type_ "button", onClick T.Go, value "Resume" ] [ ]
                                  ]
-        T.Finished (Err err) -> div [] [ text "Error: "
-                                       , text <|
-                                           case err of
-                                               UndefinedVariable x -> "no such variable " ++ x
-                                               AppliedNonFunction v e ->
-                                                   "tried to apply " ++ valueToString v ++
-                                                       " to " ++ exprToString e
-                                       ]
-        T.Finished (Ok v) -> div [] [ text "Done: "
-                                    , text <| valueToString v
-                                    ]
-                                             
+        T.Finished _ -> div [] [ text "Done" ]
+
+viewResult : Result RunError Value -> Html Msg
+viewResult res =
+    case res of
+        Err err -> div [] [ text "Error: "
+                          , text <|
+                              case err of
+                                  UndefinedVariable x -> "no such variable " ++ x
+                                  AppliedNonFunction v e ->
+                                      "tried to apply " ++ valueToString v ++
+                                          " to " ++ exprToString e
+                          ]
+        Ok v -> div [] [ text "Done: "
+                       , text <| valueToString v
+                       ]
+                             
 viewGrammar : Html Msg
 viewGrammar =
     div [ id "grammar" ]

@@ -1,5 +1,3 @@
-- [ ] Handler for "finished" events **NEED THIS** for live UI
-  
 - [ ] More serious demos
 
   + [ ] Lambda calculus/Scheme/STLC
@@ -18,9 +16,7 @@
 
     * [ ] source location information (see https://package.elm-lang.org/packages/elm/parser/latest/Parser#getPosition)
 
-    * [ ] hook up to driver:
-          
-          option to disable typechecking
+    * [ ] option to disable typechecking
 
     * [ ] add operations on ints
     
@@ -29,7 +25,5 @@
   + [ ] Probability language
 
 - [ ] Way to configure refueling amount and pause time
-
-
 
 - [ ] Add timing information to fueled computations.
