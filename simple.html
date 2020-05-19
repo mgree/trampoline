@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Simple example - mgree/trampoline - a library for running potentially non-terminating applications</title>
+    <meta charset="utf-8" />
+    <!--    <link rel="shortcut icon" href="favicon.ico"> -->
+    <link rel="stylesheet" href="main.css" />
+    <script src="simple.min.js"></script>
+  </head>
+  <body>
+    <div id="elm"></div>
+    <script>
+      let app = Elm.Simple.init({
+          node: document.getElementById('elm')
+      });
+    </script>
+    <div id="footer">
+      <div>mgree/trampoline is open source under the MIT license; you can find the <a href="https://github.com/mgree/trampoline"> source code on GitHub</a>.</div>
+      <div>Copyright &copy; 2020 <a href="https://mgree.github.io/">Michael Greenberg</a>.</div>
+    </div>
+  </body>
+</html>
