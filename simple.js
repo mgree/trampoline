@@ -4401,6 +4401,9 @@ function _Time_getZoneName()
 		callback(_Scheduler_succeed(name));
 	});
 }
+var author$project$Simple$Finished = function (a) {
+	return {$: 'Finished', a: a};
+};
 var author$project$Simple$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
@@ -5072,9 +5075,6 @@ var author$project$Simple$initializeEngineCmd = A2(
 	},
 	elm$core$Process$sleep(1.0));
 var author$project$Trampoline$Go = {$: 'Go'};
-var author$project$Trampoline$Inner = function (a) {
-	return {$: 'Inner', a: a};
-};
 var author$project$Trampoline$Stop = {$: 'Stop'};
 var author$project$Trampoline$NoInput = {$: 'NoInput'};
 var author$project$Trampoline$emptyStats = {numSteps: 0};
@@ -5086,6 +5086,17 @@ var author$project$Trampoline$init = F3(
 		return _Utils_Tuple2(
 			{model: inner, state: author$project$Trampoline$NoInput, stats: author$project$Trampoline$emptyStats, stepper: stepper},
 			cmds);
+	});
+var author$project$Trampoline$Inner = function (a) {
+	return {$: 'Inner', a: a};
+};
+var elm$core$Platform$Sub$map = _Platform_map;
+var author$project$Trampoline$subscriptions = F2(
+	function (subscriptionsInner, model) {
+		return A2(
+			elm$core$Platform$Sub$map,
+			author$project$Trampoline$Inner,
+			subscriptionsInner(model.model));
 	});
 var author$project$Trampoline$HasInput = function (a) {
 	return {$: 'HasInput', a: a};
@@ -5180,8 +5191,8 @@ var author$project$Trampoline$countSteps = F2(
 			});
 	});
 var elm$core$Basics$ge = _Utils_ge;
-var author$project$Trampoline$keepStepping = F2(
-	function (model, gas) {
+var author$project$Trampoline$keepStepping = F4(
+	function (model, gas, updateInner, notify) {
 		var _n0 = model.state;
 		switch (_n0.$) {
 			case 'NoInput':
@@ -5220,16 +5231,25 @@ var author$project$Trampoline$keepStepping = F2(
 									continue loop;
 								} else {
 									var o = _n1.a;
+									var finishedModel = A2(
+										author$project$Trampoline$countSteps,
+										n + 1,
+										_Utils_update(
+											model,
+											{
+												state: author$project$Trampoline$Finished(o)
+											}));
+									var _n2 = A2(
+										updateInner,
+										notify(o),
+										finishedModel.model);
+									var modelInnerNew = _n2.a;
+									var cmds = _n2.b;
 									return _Utils_Tuple2(
-										A2(
-											author$project$Trampoline$countSteps,
-											n + 1,
-											_Utils_update(
-												model,
-												{
-													state: author$project$Trampoline$Finished(o)
-												})),
-										elm$core$Platform$Cmd$none);
+										_Utils_update(
+											finishedModel,
+											{model: modelInnerNew}),
+										cmds);
 								}
 							}
 						}
@@ -5240,8 +5260,8 @@ var author$project$Trampoline$keepStepping = F2(
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Trampoline$update = F3(
-	function (updateInner, msg, model) {
+var author$project$Trampoline$update = F4(
+	function (updateInner, notify, msg, model) {
 		switch (msg.$) {
 			case 'SetInput':
 				if (msg.b.$ === 'AndGo') {
@@ -5269,7 +5289,7 @@ var author$project$Trampoline$update = F3(
 				return author$project$Trampoline$doGo(model);
 			case 'Refuel':
 				var gas = msg.a;
-				return A2(author$project$Trampoline$keepStepping, model, gas);
+				return A4(author$project$Trampoline$keepStepping, model, gas, updateInner, notify);
 			case 'Stop':
 				return _Utils_Tuple2(
 					author$project$Trampoline$doStop(model),
@@ -5467,7 +5487,6 @@ var elm$url$Url$fromString = function (str) {
 		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
 };
 var elm$browser$Browser$element = _Browser_element;
-var elm$core$Platform$Sub$map = _Platform_map;
 var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$em = _VirtualDom_node('em');
@@ -5923,22 +5942,26 @@ var author$project$Simple$main = elm$browser$Browser$element(
 					author$project$Simple$initializeEngineCmd);
 			},
 			author$project$Trampoline$Fueled$stepper(1)),
-		subscriptions: function (model) {
-			return A2(
-				elm$core$Platform$Sub$map,
-				author$project$Trampoline$Inner,
-				A2(elm$time$Time$every, 100, author$project$Simple$Tick));
-		},
-		update: author$project$Trampoline$update(
+		subscriptions: author$project$Trampoline$subscriptions(
+			function (model) {
+				return A2(elm$time$Time$every, 100, author$project$Simple$Tick);
+			}),
+		update: A2(
+			author$project$Trampoline$update,
 			F2(
 				function (msg, model) {
-					var newTime = msg.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{time: newTime}),
-						elm$core$Platform$Cmd$none);
-				})),
+					if (msg.$ === 'Tick') {
+						var newTime = msg.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{time: newTime}),
+							elm$core$Platform$Cmd$none);
+					} else {
+						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+					}
+				}),
+			author$project$Simple$Finished),
 		view: function (model) {
 			return A2(
 				elm$html$Html$div,
