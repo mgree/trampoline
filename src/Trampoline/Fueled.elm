@@ -1,16 +1,36 @@
-module Trampoline.Fueled exposing (..)
+module Trampoline.Fueled exposing
+    ( RunResult(..)
+    , isOutOfGas
+    , Fueled
+    , stepper
+    , run
+    , runToCompletion
+    , map
+    , return
+    , ap
+    , andThen
+    , burn
+    , mkEngine
+    )
 
-type alias Gas = Int
+import Trampoline exposing (Gas, StepResult(..), Stepper)
 
 type RunResult a = OutOfGas (Fueled a) | Complete a
 
+type alias Fueled a = Gas -> (Gas, RunResult a)
+
+stepper : Gas -> Stepper (Fueled a) a
+stepper tankSize engine =
+    let (_, result) = run engine tankSize in
+    case result of
+        OutOfGas nextEngine -> Stepping nextEngine
+        Complete a -> Done a
+    
 isOutOfGas : RunResult a -> Bool
 isOutOfGas res =
     case res of
         OutOfGas _ -> True
         Complete _ -> False
-    
-type alias Fueled a = Gas -> (Gas, RunResult a)
 
 run : Fueled a -> Gas -> (Gas, RunResult a)
 run engine tank0 =
