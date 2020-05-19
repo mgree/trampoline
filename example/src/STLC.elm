@@ -13,7 +13,7 @@ import Parser
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onInput, onClick)
 
 import Trampoline as T
 
@@ -21,24 +21,18 @@ import Trampoline as T
 -- DRIVER
 ------------------------------------------------------------------------
 
-type Msg = SetProgramText String
+type AppMsg = SetProgramText String
 
 type ProgramState = PSUnparsed (List Parser.DeadEnd)
                   | PSIllTyped Expr TypeError
                   | PSTypeChecked Expr Type
 
-type RunState = RSUnstarted
-              | RSRunning Expr (Maybe Type)
-              | RSCompleted Expr (Maybe Type) Value
-
-                    
-type alias Model =
+type alias AppModel =
     { programText : String
     , programState : ProgramState
-    , runState : RunState
     }
 
-withProgramText : String -> Model -> Model
+withProgramText : String -> AppModel -> AppModel
 withProgramText programText model =
     let programState =
             case Parser.run parseExpr programText of
@@ -52,26 +46,31 @@ withProgramText programText model =
             | programText = programText
             , programState = programState
         }
-    
-main = Browser.element { init = init
-                       , view = view
-                       , update = update
-                       , subscriptions = subscriptions
-                       }
 
-init : () -> (Model, Cmd Msg)       
+type alias Msg = T.Msg Config (Result RunError Value) AppMsg
+
+type alias Model = T.Model Config (Result RunError Value) AppModel    
+        
+main =
+    Browser.element
+        { init = T.init init step
+        , view = view
+        , update = T.update update
+        , subscriptions = T.subscriptions subscriptions
+        }
+
+init : () -> (AppModel, Cmd Msg)       
 init () = (initialModel, Cmd.none)
 
-initialModel : Model
+initialModel : AppModel
 initialModel = { programText = ""
                , programState = PSUnparsed []
-               , runState = RSUnstarted
                }
-
-subscriptions : Model -> Sub Msg
+               
+subscriptions : AppModel -> Sub AppMsg
 subscriptions model = Sub.none
 
-update : Msg -> Model -> (Model, Cmd Msg)               
+update : AppMsg -> AppModel -> (AppModel, Cmd Msg)               
 update msg model =
     case msg of
         SetProgramText programText -> (model |> withProgramText programText, Cmd.none)
@@ -84,12 +83,15 @@ view model =
         [ textarea [ id "program"
                    , rows 15
                    , style "width" "100%"
-                   , onInput SetProgramText
+                   , onInput (\text -> T.Inner <| SetProgramText text)
                    ]
-              [ text model.programText ]
+              [ text model.model.programText ]
         , div [ id "programstate" ]
-              [ viewProgramState model.programState ]
+              [ viewProgramState model.model.programState ]
+        , div [ id "runstate" ]
+              [ viewRunState model ]
         ]
+    , viewGrammar
     ]
 
 viewProgramState : ProgramState -> Html Msg
@@ -97,7 +99,7 @@ viewProgramState programState =
     case programState of
         PSUnparsed err ->
             div [ class "error" ]
-                [ span [] [ text "Parse error:" ]
+                [ span [] [ text "Parse error: " ]
                 , span [] [ text <| deadEndsToString err ]
                 ]
         PSIllTyped expr err ->
@@ -108,62 +110,47 @@ viewProgramState programState =
         PSTypeChecked expr ty ->
             div [ class "success" ]
                 [ span [] [ text ("Well typed: " ++ typeToString ty) ]
+                , input [ type_ "button", onClick (T.SetInput (mkConfig emptyEnv expr) T.AndGo)
+                        , value "Run" ] [ ]
                 ]
 
-deadEndsToString : List Parser.DeadEnd -> String
-deadEndsToString deadEnds =
-    let
-        deadEndToString : Parser.DeadEnd -> String
-        deadEndToString deadEnd =
-            let
-                position : String
-                position =
-                    "row:" ++ String.fromInt deadEnd.row ++ " col:" ++ String.fromInt deadEnd.col ++ "\n"
-            in
-            case deadEnd.problem of
-                Parser.Expecting str ->
-                    "Expecting " ++ str ++ "at " ++ position
-
-                Parser.ExpectingInt ->
-                    "Expecting integer at " ++ position
-
-                Parser.ExpectingHex ->
-                    "Expecting hexadecimal number at " ++ position
-
-                Parser.ExpectingOctal ->
-                    "Expecting octal number at " ++ position
-
-                Parser.ExpectingBinary ->
-                    "Expecting binary at " ++ position
-
-                Parser.ExpectingFloat ->
-                    "Expecting float at " ++ position
-
-                Parser.ExpectingNumber ->
-                    "Expecting number at " ++ position
-
-                Parser.ExpectingVariable ->
-                    "Expecting variable at " ++ position
-
-                Parser.ExpectingSymbol str ->
-                    "Expecting symbol " ++ str ++ " at " ++ position
-
-                Parser.ExpectingKeyword str ->
-                    "Expecting keyword " ++ str ++ "at " ++ position
-
-                Parser.ExpectingEnd ->
-                    "Expecting end of input at " ++ position
-
-                Parser.UnexpectedChar ->
-                    "Unexpected character at " ++ position
-
-                Parser.Problem str ->
-                    "Error: " ++ str ++ " at " ++ position
-
-                Parser.BadRepeat ->
-                    "Internal error (BadRepeat) at " ++ position
-    in
-    List.foldl (++) "" (List.map deadEndToString deadEnds)
+viewRunState : Model -> Html Msg
+viewRunState model =
+    case model.state of
+        T.NoInput      -> div [] []
+        T.HasInput _   -> div [] []
+        T.Running  _   -> div [] [ text "Running ("
+                                 , text <| String.fromInt model.stats.numSteps
+                                 , text " steps)"
+                                 , input [ type_ "button", onClick T.Stop, value "Stop" ] [ ]
+                                 ]
+        T.Stopped  cfg -> div [] [ text "Stopped: "
+                                 , text <| configToString cfg
+                                 , input [ type_ "button", onClick T.Go, value "Resume" ] [ ]
+                                 ]
+        T.Finished (Err err) -> div [] [ text "Error: "
+                                       , text <|
+                                           case err of
+                                               UndefinedVariable x -> "no such variable " ++ x
+                                               AppliedNonFunction v e ->
+                                                   "tried to apply " ++ valueToString v ++
+                                                       " to " ++ exprToString e
+                                       ]
+        T.Finished (Ok v) -> div [] [ text "Done: "
+                                    , text <| valueToString v
+                                    ]
+                                             
+viewGrammar : Html Msg
+viewGrammar =
+    div [ id "grammar" ]
+        [ h3 [] [text "STLC Grammar"]
+        , div [] [ text "variable names: [a-zA-Z][a-zA-Z0-9_]*"
+                 , p [] [text "an alphabetical character, followed by zero or more alphanumeric characters and underscores, e.g. x, y var7 lambdaTheUltimate_"]]
+        , div [] [ text "types: ty ::= int | ty1->ty2"
+                 , p [] [text "e.g., (int->int)->int"]
+                 ]
+        , div [] [text "expressions: e ::= x | n | e1 e2 | \\x:ty. e"]
+        ]
 
 ------------------------------------------------------------------------
 -- EXPRESSIONS AND TYPES
@@ -280,6 +267,12 @@ typeOf g e =
 type Value = VNum Int
            | VClo VarName Type Expr Env
 
+valueToString : Value -> String
+valueToString v =
+    case v of
+        VNum n -> String.fromInt n
+        VClo x ty e env ->  "<" ++ exprToString (ELam x ty e) ++ ", ...>"
+             
 type alias Env = Dict VarName Value
 
 emptyEnv : Env
@@ -319,66 +312,77 @@ type Kont = KEmpty
           | KAppR VarName Type Expr Env Kont
             {- evaluating argument, holds evaluated closure -}
 
-type Config = Running Expr Env Kont
-            | StepError RunError
-            | Done Value
+kontToString : Kont -> String
+kontToString outerKont =
+    let build kont =
+            case kont of
+                KEmpty -> \s -> s
+                KAppL e k -> \s -> build k <| s ++ " " ++ exprToString e
+                KAppR x ty e env k -> \s -> build k <| valueToString (VClo x ty e env) ++ " " ++ s
+    in
+        build outerKont "[]"
+            
+type alias Config =
+    { expr : Expr
+    , env  : Env
+    , kont : Kont
+    }
 
 mkConfig : Env -> Expr -> Config
-mkConfig env e = Running e env KEmpty
+mkConfig env e = { expr = e, env = env, kont = KEmpty }
 
-stepRunning : Expr -> Env -> Kont -> Config
-stepRunning e env kOuter =              
-    case (e, kOuter) of
+configToString : Config -> String
+configToString cfg =
+    "<" ++ exprToString cfg.expr ++ ", ..., " ++ kontToString cfg.kont ++ ">"
+                 
+step : Config -> T.StepResult Config (Result RunError Value)
+step cfg =
+    let env = cfg.env in
+    let error err = T.Done <| Err <| err in
+    let done  v   = T.Done <| Ok <| v in
+    let running newE newEnv newK = T.Stepping { expr = newE, env = newEnv, kont = newK } in
+    case (cfg.expr, cfg.kont) of
         (EVar x, k) ->
-            case lookupVal env x of
-                Nothing -> StepError (UndefinedVariable x)
-                Just (VNum n) -> Running (ENum n) env k
-                Just (VClo y ty1 eBody envClo) -> Running (ELam y ty1 eBody) envClo k
+            case lookupVal cfg.env x of
+                Nothing -> error <| UndefinedVariable x
+                Just (VNum n) -> running (ENum n) env k
+                Just (VClo y ty1 eBody envClo) -> running (ELam y ty1 eBody) envClo k
 
         (EApp e1 e2, k) ->
-            Running e1 env (KAppL e2 k)
+            running e1 env (KAppL e2 k)
 
         (ELam x ty1 eBody, KAppL eArg k) ->
-            Running eArg env (KAppR x ty1 eBody env k)
+            running eArg env (KAppR x ty1 eBody env k)
 
         (ENum n, KAppL eArg k) ->
-            StepError (AppliedNonFunction (VNum n) eArg)
+            error <| AppliedNonFunction (VNum n) eArg
 
         (ELam argX argTy argBody, KAppR x ty1 eBody envClo k) ->
-            Running eBody (extendVal envClo x (VClo argX argTy argBody env)) k
+            running eBody (extendVal envClo x (VClo argX argTy argBody env)) k
 
         (ENum n, KAppR x ty1 eBody envClo k) ->
-            Running eBody (extendVal envClo x (VNum n)) k
+            running eBody (extendVal envClo x (VNum n)) k
 
         (ELam x ty body, KEmpty) ->
-            Done (VClo x ty body env)
+            done (VClo x ty body env)
        
         (ENum n, KEmpty) ->
-            Done (VNum n)
+            done (VNum n)
                  
-step : Config -> Maybe Config
-step config =
-    case config of
-        StepError err -> Nothing
-
-        Done val -> Nothing
-                    
-        Running e env k -> Just (stepRunning e env k)
-
 evalCEK : Env -> Expr -> Result RunError Value
 evalCEK initialEnv intialE =
     let loop cfg =
-            case cfg of
-                Done v -> Ok v
-                StepError err -> Err err
-                Running e env k -> loop (stepRunning e env k)
+            case step cfg of
+                T.Done result -> result
+                T.Stepping newCfg -> loop newCfg
     in
         loop (mkConfig initialEnv intialE)
 
-                        
 ------------------------------------------------------------------------
 -- PARSER
 ------------------------------------------------------------------------
+
+-- TODO: invariant: gobble spaces after
 
 keywords : Set String
 keywords = Set.singleton "int"
@@ -386,8 +390,9 @@ keywords = Set.singleton "int"
 parseType : Parser Type
 parseType =
     succeed (\(lhs, rhs) -> List.foldr TFun rhs lhs)
-        |= sepByR1 parseAtomicType (spaces |. symbol "->" |. spaces)
-               
+        |= sepByR1 parseAtomicType (symbol "->" |. spaces)
+        |. spaces
+           
 parseAtomicType : Parser Type
 parseAtomicType =
     succeed identity
@@ -396,11 +401,12 @@ parseAtomicType =
            [ succeed TInt |. keyword "int"
            , parens (lazy (\_ -> parseType))
            ]
+        |. spaces
 
 parseExpr : Parser Expr
 parseExpr =
     succeed (\(lhs, rhs) -> List.foldl (\r l -> EApp l r) lhs rhs)
-        |= sepByL1 parseAtomicExpr spaces
+        |= listL1 parseAtomicExpr
 
 parseAtomicExpr : Parser Expr
 parseAtomicExpr =
@@ -422,7 +428,6 @@ parseVar = Parser.variable { start = Char.isAlpha
 parens : Parser a -> Parser a
 parens p = succeed identity |. spaces |. symbol "(" |. spaces |= p |. spaces |. symbol ")"
 
-
 sepByR1 : Parser a -> Parser sep -> Parser (List a, a)
 sepByR1 parseItem parseSep =
     let helper items =
@@ -437,21 +442,74 @@ sepByR1 parseItem parseSep =
         Parser.loop [] helper |>
         Parser.map (\(items, item) -> (List.reverse items, item))
 
-sepEndBy : Parser a -> Parser sep -> Parser (List a)
-sepEndBy parseItem parseSep =
+listL1 : Parser a -> Parser (a, List a)
+listL1 p =
     let helper items =
-            Parser.oneOf
-                [ succeed (\item -> Parser.Loop (item::items))
-                      |= parseItem
-                      |. parseSep
-                , succeed (Parser.Done items)
-                ]
+            succeed identity
+                |. spaces
+                |= Parser.oneOf
+                   [ succeed (\item -> Parser.Loop (item::items))
+                     |= p
+                   , succeed (Parser.Done items)
+                   ]
     in
-        Parser.loop [] helper |>
-        Parser.map List.reverse
-            
-sepByL1 : Parser a -> Parser sep -> Parser (a, List a)
-sepByL1 parseItem parseSep =
     succeed (\item items -> (item, items))
-            |= parseItem 
-            |= sepEndBy parseItem parseSep           
+        |= p
+        |= (Parser.loop [] helper |>
+            Parser.map List.reverse)
+            
+deadEndsToString : List Parser.DeadEnd -> String
+deadEndsToString deadEnds =
+    let
+        deadEndToString : Parser.DeadEnd -> String
+        deadEndToString deadEnd =
+            let
+                position : String
+                position =
+                    "row:" ++ String.fromInt deadEnd.row ++ " col:" ++ String.fromInt deadEnd.col ++ "\n"
+            in
+            case deadEnd.problem of
+                Parser.Expecting str ->
+                    "Expecting " ++ str ++ "at " ++ position
+
+                Parser.ExpectingInt ->
+                    "Expecting integer at " ++ position
+
+                Parser.ExpectingHex ->
+                    "Expecting hexadecimal number at " ++ position
+
+                Parser.ExpectingOctal ->
+                    "Expecting octal number at " ++ position
+
+                Parser.ExpectingBinary ->
+                    "Expecting binary number at " ++ position
+
+                Parser.ExpectingFloat ->
+                    "Expecting decimal/floating-point number at " ++ position
+
+                Parser.ExpectingNumber ->
+                    "Expecting number at " ++ position
+
+                Parser.ExpectingVariable ->
+                    "Expecting variable at " ++ position
+
+                Parser.ExpectingSymbol str ->
+                    "Expecting symbol " ++ str ++ " at " ++ position
+
+                Parser.ExpectingKeyword str ->
+                    "Expecting keyword " ++ str ++ "at " ++ position
+
+                Parser.ExpectingEnd ->
+                    "Expecting end of input at " ++ position
+
+                Parser.UnexpectedChar ->
+                    "Unexpected character at " ++ position
+
+                Parser.Problem str ->
+                    "Error: " ++ str ++ " at " ++ position
+
+                Parser.BadRepeat ->
+                    "Internal error (BadRepeat) at " ++ position
+    in
+    List.foldl (++) "" (List.map deadEndToString deadEnds)
+               

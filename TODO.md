@@ -1,8 +1,4 @@
-- [ ] Convert to rewrite system version
-  
-  related:
-  
-  `type Fueled a = Thunk (Gas -> Either (Gas,a) (Fueled a)) | Computed a`
+- [ ] Handler for "finished" events **NEED THIS** for live UI
   
 - [ ] More serious demos
 
@@ -18,17 +14,13 @@
       
       random generator of well typed exprs
       
-      typechecker, evaluator 
+      evaluator 
 
     * [ ] source location information (see https://package.elm-lang.org/packages/elm/parser/latest/Parser#getPosition)
 
     * [ ] hook up to driver:
           
           option to disable typechecking
-          
-          stepping
-          
-          interrupt button
 
     * [ ] add operations on ints
     
@@ -37,5 +29,7 @@
   + [ ] Probability language
 
 - [ ] Way to configure refueling amount and pause time
+
+
 
 - [ ] Add timing information to fueled computations.

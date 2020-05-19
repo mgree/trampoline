@@ -8,18 +8,21 @@ module Trampoline exposing
     , State(..)
     , init
     , update
+    , subscriptions
     , refuelCmd
     , doGo
     , keepStepping
     , doStop
     )
 
+import Platform.Sub
 import Process
 import Task
 
 type StepResult a o = Stepping a | Done o
 
 type alias Stepper a o = a -> StepResult a o
+
 
 type alias Gas = Int
     
@@ -70,6 +73,12 @@ refuelCmd : Gas -> Float -> Cmd (Msg a o msg)
 refuelCmd refuelAmount pauseTime =
     Task.perform (\() -> Refuel refuelAmount) (Process.sleep pauseTime)
 
+defaultSteps : Gas
+defaultSteps = 5
+
+defaultPauseTime : Float
+defaultPauseTime = 20.0
+
 -- TODO a way to configure this... messages?
 defaultRefuel : Cmd (Msg a o msg)
 defaultRefuel = refuelCmd 5 20.0
@@ -87,7 +96,7 @@ countSteps : Gas -> Model a o model -> Model a o model
 countSteps steps model =
     let stats = model.stats in
     { model | stats = { stats | numSteps = stats.numSteps + steps } }
-                      
+        
 keepStepping : Model a o model -> Gas -> (Model a o model, Cmd (Msg a o msg))
 keepStepping model gas =
     case model.state of
@@ -126,3 +135,6 @@ update updateInner msg model =
         Inner msgInner ->
             let (modelInnerNew, cmds) = updateInner msgInner model.model in
             ({ model | model = modelInnerNew }, cmds)
+
+subscriptions : (model -> Platform.Sub.Sub msg) -> Model a o model -> Platform.Sub.Sub (Msg a o msg)
+subscriptions subscriptionsInner model = subscriptionsInner model.model |> Platform.Sub.map Inner

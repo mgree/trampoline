@@ -52,6 +52,6 @@ main = Browser.element
     , update = T.update (\msg model ->
                              case msg of
                                  Tick newTime -> ({ model | time = newTime }, Cmd.none))
-    , subscriptions = \model -> Time.every 100 Tick |> Platform.Sub.map T.Inner
+    , subscriptions = T.subscriptions (\model -> Time.every 100 Tick)
     }
 
