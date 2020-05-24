@@ -5077,7 +5077,7 @@ var author$project$Simple$initializeEngineCmd = A2(
 var author$project$Trampoline$Go = {$: 'Go'};
 var author$project$Trampoline$Stop = {$: 'Stop'};
 var author$project$Trampoline$NoInput = {$: 'NoInput'};
-var author$project$Trampoline$emptyStats = {numSteps: 0};
+var author$project$Trampoline$emptyStats = {numSteps: 0, totalSteps: 0};
 var author$project$Trampoline$init = F3(
 	function (initInner, stepper, flags) {
 		var _n0 = initInner(flags);
@@ -5101,9 +5101,6 @@ var author$project$Trampoline$subscriptions = F2(
 var author$project$Trampoline$HasInput = function (a) {
 	return {$: 'HasInput', a: a};
 };
-var author$project$Trampoline$Running = function (a) {
-	return {$: 'Running', a: a};
-};
 var author$project$Trampoline$Refuel = function (a) {
 	return {$: 'Refuel', a: a};
 };
@@ -5117,6 +5114,9 @@ var author$project$Trampoline$refuelCmd = F2(
 			elm$core$Process$sleep(pauseTime));
 	});
 var author$project$Trampoline$defaultRefuel = A2(author$project$Trampoline$refuelCmd, 5, 20.0);
+var author$project$Trampoline$Running = function (a) {
+	return {$: 'Running', a: a};
+};
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Trampoline$doGo = function (model) {
@@ -5187,7 +5187,7 @@ var author$project$Trampoline$countSteps = F2(
 			{
 				stats: _Utils_update(
 					stats,
-					{numSteps: stats.numSteps + steps})
+					{numSteps: stats.numSteps + steps, totalSteps: stats.totalSteps + steps})
 			});
 	});
 var elm$core$Basics$ge = _Utils_ge;
@@ -5262,48 +5262,50 @@ var author$project$Trampoline$keepStepping = F4(
 	});
 var author$project$Trampoline$update = F4(
 	function (updateInner, notify, msg, model) {
-		switch (msg.$) {
-			case 'SetInput':
-				if (msg.b.$ === 'AndGo') {
+		update:
+		while (true) {
+			switch (msg.$) {
+				case 'SetInput':
 					var a = msg.a;
-					var _n1 = msg.b;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								state: author$project$Trampoline$Running(a)
-							}),
-						elm$core$Platform$Cmd$none);
-				} else {
-					var a = msg.a;
-					var _n2 = msg.b;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								state: author$project$Trampoline$HasInput(a)
-							}),
-						elm$core$Platform$Cmd$none);
-				}
-			case 'Go':
-				return author$project$Trampoline$doGo(model);
-			case 'Refuel':
-				var gas = msg.a;
-				return A4(author$project$Trampoline$keepStepping, model, gas, updateInner, notify);
-			case 'Stop':
-				return _Utils_Tuple2(
-					author$project$Trampoline$doStop(model),
-					elm$core$Platform$Cmd$none);
-			default:
-				var msgInner = msg.a;
-				var _n3 = A2(updateInner, msgInner, model.model);
-				var modelInnerNew = _n3.a;
-				var cmds = _n3.b;
-				return _Utils_Tuple2(
-					_Utils_update(
+					var andGo = msg.b;
+					var inputModel = _Utils_update(
 						model,
-						{model: modelInnerNew}),
-					cmds);
+						{
+							state: author$project$Trampoline$HasInput(a)
+						});
+					if (andGo.$ === 'AndGo') {
+						var $temp$updateInner = updateInner,
+							$temp$notify = notify,
+							$temp$msg = author$project$Trampoline$Go,
+							$temp$model = inputModel;
+						updateInner = $temp$updateInner;
+						notify = $temp$notify;
+						msg = $temp$msg;
+						model = $temp$model;
+						continue update;
+					} else {
+						return _Utils_Tuple2(inputModel, author$project$Trampoline$defaultRefuel);
+					}
+				case 'Go':
+					return author$project$Trampoline$doGo(model);
+				case 'Refuel':
+					var gas = msg.a;
+					return A4(author$project$Trampoline$keepStepping, model, gas, updateInner, notify);
+				case 'Stop':
+					return _Utils_Tuple2(
+						author$project$Trampoline$doStop(model),
+						elm$core$Platform$Cmd$none);
+				default:
+					var msgInner = msg.a;
+					var _n2 = A2(updateInner, msgInner, model.model);
+					var modelInnerNew = _n2.a;
+					var cmds = _n2.b;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{model: modelInnerNew}),
+						cmds);
+			}
 		}
 	});
 var author$project$Trampoline$Done = function (a) {
