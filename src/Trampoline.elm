@@ -6,27 +6,88 @@ module Trampoline exposing
     , Msg(..)
     , AndGo(..)
     , State(..)
+    , Stats
     , init
     , update
     , subscriptions
-    , refuelCmd
-    , doGo
-    , keepStepping
-    , doStop
     )
+
+{-| The Trampoline library is for writing suspendable computations,
+i.e., long-running computations that don't freeze the UI. The library
+supports two interfaces: step functions and fueled computations. The
+implementation is entirely based around step functions.
+
+- TODO what is a step function?
+
+# Key definitions for writing suspendable computations
+
+Long running computations have two parts: a `Stepper` and an
+input. You'll set the stepper when configuring the trampoline state
+(see `init`).
+
+@docs Stepper, StepResult
+
+# Messages 
+
+Your program will control the steppers' inputs and when it runs by
+sending messages.  Internally, long running computations use private
+messages to continue running while allowing other messages to be
+processed.
+
+@docs Msg, AndGo
+
+# Models
+@docs State, Stats, Model
+
+# Helpers using the stepper
+
+A variety of wrappers will help you manage state and handle only the
+messages your program needs to know about.
+
+@docs init, update, subscriptions
+
+# Internals
+
+@docs Gas
+
+-}
 
 import Platform.Sub
 import Process
 import Task
 
-type StepResult a o = Stepping a | Done o
+{-| A an `a`-`o` stepper is a function that takes a value of type `a`
+and either:
 
+- isn't yet done, so it returns another value of type `a`
+- is finished, so it returns a value of type `o`.
+
+For example, a stepper for a programming language might look like:
+
+   ExprStepper = Stepper Expr (Result RuntimeError Value)
+-}
 type alias Stepper a o = a -> StepResult a o
 
+{-| The result of a single step: either another `a`, or we're done
+with an `o`.
+-}
+type StepResult a o = Stepping a | Done o
+
+{-| We count steps in terms of `Gas`.
+-}
 type alias Gas = Int
-    
+
+-- TODO hide the Refuel constructor? can't hide exports, so we need to export functions
+
+{-| Internal messages used by Trampoline's stepper. These actually
+need to be hidden, with just `SetInput`, `Go`, and `Stop`, being
+exposed.
+-}
 type Msg a o msg = SetInput a AndGo | Go | Refuel Gas | Stop | Inner msg
 
+{-| Determines whether to immediately start running after `SetInput`
+or to wait for `Go` message.
+-}
 type AndGo = AndGo | AndWait
     
 type State a o = NoInput
