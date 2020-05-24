@@ -56,15 +56,22 @@ import Platform.Sub
 import Process
 import Task
 
-{-| A an `a`-`o` stepper is a function that takes a value of type `a`
+{-| A `Stepper a o` is a function that takes a value of type `a`
 and either:
 
-- isn't yet done, so it returns another value of type `a`
+- isn't yet done, so it returns another value of type `a` (which
+  should be stepped more)
 - is finished, so it returns a value of type `o`.
 
 For example, a stepper for a programming language might look like:
 
-   ExprStepper = Stepper Expr (Result RuntimeError Value)
+   type alias ExprStepper = Stepper Expr (Result RuntimeError Value)
+
+The types `a` and `o` need not be different. A long running
+computation which always succeeds and produces an integer might use a
+stepper like:
+
+   type alias IntStepper = Stepper Int Int
 -}
 type alias Stepper a o = a -> StepResult a o
 
@@ -89,13 +96,17 @@ type Msg a o msg = SetInput a AndGo | Go | Refuel Gas | Stop | Inner msg
 or to wait for `Go` message.
 -}
 type AndGo = AndGo | AndWait
-    
-type State a o = NoInput
-               | HasInput a
-               | Running  a
-               | Stopped  a
-               | Finished o
 
+{-| The current state of the stepper. This information is revealed
+completely so you can reflect it best in your program; you should
+probably not change it yourself. -}
+type State a o = NoInput | HasInput a | Running a | Stopped a | Finished o
+
+{-| The stepper keeps some rudimentary statistics. Eventually, this
+information (along with some timing information) will allow for the
+stepper to adaptively determine how many steps to take at a time. As
+such, while it's currently harmless to change this information, it's
+inadvisable. -}
 type alias Stats =
     { numSteps : Gas
     , totalSteps : Gas
@@ -106,7 +117,10 @@ emptyStats =
     { numSteps   = 0
     , totalSteps = 0
     }
-    
+
+{-| A `Model a o model` wraps your program's `model` type to
+accommodate an `Stepper a o`.
+-}
 type alias Model a o model =
     { state : State a o
     , stats : Stats
@@ -114,6 +128,17 @@ type alias Model a o model =
     , model : model
     }
 
+{-| The `init` wrapper  initializes the outer trampoline state given:
+
+- your program's inner initializer, of type `flags -> (model, Cmd (Msg
+  a o msg))`
+- a `Stepper a o` for the long running computation
+
+This is meant to be used with Browser.element, e.g.,
+
+    Browser.element { init = Trampoline.init myInit myStepper, ... }
+
+-}
 init : (flags -> (model, Cmd (Msg a o msg))) -> Stepper a o -> flags -> (Model a o model, Cmd (Msg a o msg))
 init initInner stepper flags =
     let (inner, cmds) = initInner flags in
@@ -192,7 +217,18 @@ doStop model =
         Finished o -> model
         Running a -> { model | state = Stopped a }
         Stopped a -> model
-                
+
+{-| A wrapper for your program's `update` function. You must provide:
+
+- your inner update function, of type `(msg -> model -> (model, Cmd (Msg a o msg)))`
+- a function that generates message when stepping is complete, of type `o -> msg`
+
+This is meant to be used with Browser.element, e.g.,
+
+    Browser.element { update = Trampoline.init myUpdate NotifyMsg, ... }
+
+where `NotifyMsg` is some message defined in your application of type `o -> msg`.
+-}                
 update : (msg -> model -> (model, Cmd (Msg a o msg))) -> (o -> msg) ->
          Msg a o msg -> Model a o model -> (Model a o model, Cmd (Msg a o msg))
 update updateInner notify msg model =
@@ -209,5 +245,7 @@ update updateInner notify msg model =
             let (modelInnerNew, cmds) = updateInner msgInner model.model in
             ({ model | model = modelInnerNew }, cmds)
 
+{-| A wrapper for your program's `subscriptions` function, which amounts to running `Platform.Sub.map`.
+-}
 subscriptions : (model -> Platform.Sub.Sub msg) -> Model a o model -> Platform.Sub.Sub (Msg a o msg)
 subscriptions subscriptionsInner model = subscriptionsInner model.model |> Platform.Sub.map Inner
