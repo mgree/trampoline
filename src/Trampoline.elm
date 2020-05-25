@@ -1,6 +1,5 @@
 module Trampoline exposing
     ( Model
-    , Gas
     , StepResult(..)
     , Stepper
     , Msg(..)
@@ -16,8 +15,6 @@ module Trampoline exposing
 i.e., long-running computations that don't freeze the UI. The library
 supports two interfaces: step functions and fueled computations. The
 implementation is entirely based around step functions.
-
-- TODO what is a step function?
 
 # Key definitions for writing suspendable computations
 
@@ -46,15 +43,15 @@ messages your program needs to know about.
 
 @docs init, update, subscriptions
 
-# Internals
-
-@docs Gas
-
 -}
+
+import Trampoline.Internal exposing (..)
 
 import Platform.Sub
 import Process
 import Task
+
+-- TODO hide the Refuel constructor? can't hide exports, so we need to export functions
 
 {-| A `Stepper a o` is a function that takes a value of type `a`
 and either:
@@ -79,12 +76,6 @@ type alias Stepper a o = a -> StepResult a o
 with an `o`.
 -}
 type StepResult a o = Stepping a | Done o
-
-{-| We count steps in terms of `Gas`.
--}
-type alias Gas = Int
-
--- TODO hide the Refuel constructor? can't hide exports, so we need to export functions
 
 {-| Internal messages used by Trampoline's stepper. These actually
 need to be hidden, with just `SetInput`, `Go`, and `Stop`, being
@@ -159,12 +150,6 @@ init initInner stepper flags =
 refuelCmd : Gas -> Float -> Cmd (Msg a o msg)
 refuelCmd refuelAmount pauseTime =
     Task.perform (\() -> Refuel refuelAmount) (Process.sleep pauseTime)
-
-defaultSteps : Gas
-defaultSteps = 5
-
-defaultPauseTime : Float
-defaultPauseTime = 20.0
 
 -- TODO a way to configure this... messages?
 defaultRefuel : Cmd (Msg a o msg)

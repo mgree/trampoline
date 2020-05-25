@@ -1,7 +1,9 @@
 module FuelTests exposing (..)
 
 import Trampoline exposing (..)
-import Trampoline.Fueled exposing (..)
+import Trampoline.Fueled exposing (runToCompletion)
+import Trampoline.Fueled.Internal exposing (..)
+import Trampoline.Internal exposing (..)
 import Trampoline.Examples exposing (..)
 
 import Test exposing (..)
@@ -12,8 +14,8 @@ import Random
 upTo1024 : Fuzz.Fuzzer Int
 upTo1024 = Fuzz.intRange 1 1024
 
-runsTo : Fueled a -> a -> Gas -> Expect.Expectation
-runsTo engine res tank = Expect.equal res (runToCompletion engine tank)
+runsTo : Fueled a -> a -> Expect.Expectation
+runsTo engine res = Expect.equal res (runToCompletion engine)
            
 diverges : Fueled a -> Gas -> Expect.Expectation
 diverges engine tank = run engine tank |> Tuple.second |> isOutOfGas
@@ -24,12 +26,12 @@ suite =
     describe "Fuel"
         [
          describe "factorial"
-             [ fuzz upTo1024 "runToCompletion fact 0" <|
-                   \tank -> runsTo (factorial 0) 1 tank
-             , fuzz upTo1024 "runToCompletion fact 1" <|
-                   \tank -> runsTo (factorial 1) 1 tank
-             , fuzz upTo1024 "runToCompletion fact 5" <|
-                   \tank -> runsTo (factorial 5) 120 tank
+             [ test "runToCompletion fact 0" <|
+                   \_ -> runsTo (factorial 0) 1
+             , test "runToCompletion fact 1" <|
+                   \_ -> runsTo (factorial 1) 1 
+             , test "runToCompletion fact 5" <|
+                   \_ -> runsTo (factorial 5) 120
              , test "run fact 5 out of gas (1 step)" <|
                    \_ -> run (factorial 5) 1
                       |> Tuple.second

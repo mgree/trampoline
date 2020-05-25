@@ -6,8 +6,7 @@
     "version": "0.1.0",
     "exposed-modules": [
         "Trampoline",
-        "Trampoline.Fueled",
-        "Trampoline.Examples"
+        "Trampoline.Fueled"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "source-directories": [
