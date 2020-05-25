@@ -16,3 +16,4 @@ deploy : app/main.min.js
 
 clean :
 	-rm app/simple.js app/simple.min.js
+	-rm app/stlc.js app/stlc.min.js 

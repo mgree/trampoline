@@ -4412,7 +4412,11 @@ var author$project$Trampoline$SetInput = F2(
 	function (a, b) {
 		return {$: 'SetInput', a: a, b: b};
 	});
-var author$project$Trampoline$Fueled$OutOfGas = function (a) {
+var author$project$Trampoline$setInput = F2(
+	function (a, and) {
+		return A2(author$project$Trampoline$SetInput, a, and);
+	});
+var author$project$Trampoline$Fueled$Internal$OutOfGas = function (a) {
 	return {$: 'OutOfGas', a: a};
 };
 var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
@@ -4496,30 +4500,38 @@ var elm$core$Set$toList = function (_n0) {
 	return elm$core$Dict$keys(dict);
 };
 var elm$core$Basics$le = _Utils_le;
-var author$project$Trampoline$Fueled$run = F2(
+var author$project$Trampoline$Fueled$Internal$run = F2(
 	function (engine, tank0) {
 		return (tank0 <= 0) ? _Utils_Tuple2(
 			0,
-			author$project$Trampoline$Fueled$OutOfGas(engine)) : engine(tank0);
+			author$project$Trampoline$Fueled$Internal$OutOfGas(engine)) : engine(tank0);
 	});
 var elm$core$Basics$sub = _Basics_sub;
 var author$project$Trampoline$Fueled$burn = function (engine) {
 	return function (tank0) {
-		return A2(author$project$Trampoline$Fueled$run, engine, tank0 - 1);
+		return A2(author$project$Trampoline$Fueled$Internal$run, engine, tank0 - 1);
 	};
 };
-var author$project$Trampoline$Fueled$mkEngine = function (thunk) {
-	return author$project$Trampoline$Fueled$burn(
-		function (tank0) {
-			return A2(thunk, _Utils_Tuple0, tank0);
-		});
+var author$project$Trampoline$Fueled$lazy = function (thunk) {
+	return function (tank0) {
+		return A2(thunk, _Utils_Tuple0, tank0);
+	};
 };
+var elm$core$Basics$apL = F2(
+	function (f, x) {
+		return f(x);
+	});
+var author$project$Trampoline$Fueled$call = F2(
+	function (f, a) {
+		return author$project$Trampoline$Fueled$burn(
+			author$project$Trampoline$Fueled$lazy(
+				function (_n0) {
+					return f(a);
+				}));
+	});
 var elm$core$Basics$add = _Basics_add;
-var author$project$Trampoline$Examples$betterDiverge = function (n) {
-	return author$project$Trampoline$Fueled$mkEngine(
-		function (_n0) {
-			return author$project$Trampoline$Examples$betterDiverge(n + 1);
-		});
+var author$project$Trampoline$Fueled$Examples$bestDiverge = function (n) {
+	return A2(author$project$Trampoline$Fueled$call, author$project$Trampoline$Fueled$Examples$bestDiverge, n + 1);
 };
 var elm$core$Process$sleep = _Process_sleep;
 var elm$core$Basics$identity = function (x) {
@@ -4733,10 +4745,6 @@ var elm$core$Array$treeFromBuilder = F2(
 				continue treeFromBuilder;
 			}
 		}
-	});
-var elm$core$Basics$apL = F2(
-	function (f, x) {
-		return f(x);
 	});
 var elm$core$Basics$floor = _Basics_floor;
 var elm$core$Basics$max = F2(
@@ -5069,13 +5077,13 @@ var author$project$Simple$initializeEngineCmd = A2(
 	elm$core$Task$perform,
 	function (_n0) {
 		return A2(
-			author$project$Trampoline$SetInput,
-			author$project$Trampoline$Examples$betterDiverge(0),
+			author$project$Trampoline$setInput,
+			author$project$Trampoline$Fueled$Examples$bestDiverge(0),
 			author$project$Trampoline$AndWait);
 	},
 	elm$core$Process$sleep(1.0));
 var author$project$Trampoline$Go = {$: 'Go'};
-var author$project$Trampoline$Stop = {$: 'Stop'};
+var author$project$Trampoline$go = author$project$Trampoline$Go;
 var author$project$Trampoline$NoInput = {$: 'NoInput'};
 var author$project$Trampoline$emptyStats = {numSteps: 0, totalSteps: 0};
 var author$project$Trampoline$init = F3(
@@ -5087,6 +5095,8 @@ var author$project$Trampoline$init = F3(
 			{model: inner, state: author$project$Trampoline$NoInput, stats: author$project$Trampoline$emptyStats, stepper: stepper},
 			cmds);
 	});
+var author$project$Trampoline$Stop = {$: 'Stop'};
+var author$project$Trampoline$stop = author$project$Trampoline$Stop;
 var author$project$Trampoline$Inner = function (a) {
 	return {$: 'Inner', a: a};
 };
@@ -5113,7 +5123,9 @@ var author$project$Trampoline$refuelCmd = F2(
 			},
 			elm$core$Process$sleep(pauseTime));
 	});
-var author$project$Trampoline$defaultRefuel = A2(author$project$Trampoline$refuelCmd, 5, 20.0);
+var author$project$Trampoline$Internal$defaultPauseTime = 20.0;
+var author$project$Trampoline$Internal$defaultSteps = 5;
+var author$project$Trampoline$defaultRefuel = A2(author$project$Trampoline$refuelCmd, author$project$Trampoline$Internal$defaultSteps, author$project$Trampoline$Internal$defaultPauseTime);
 var author$project$Trampoline$Running = function (a) {
 	return {$: 'Running', a: a};
 };
@@ -5261,13 +5273,13 @@ var author$project$Trampoline$keepStepping = F4(
 		}
 	});
 var author$project$Trampoline$update = F4(
-	function (updateInner, notify, msg, model) {
+	function (updateInner, notify, message, model) {
 		update:
 		while (true) {
-			switch (msg.$) {
+			switch (message.$) {
 				case 'SetInput':
-					var a = msg.a;
-					var andGo = msg.b;
+					var a = message.a;
+					var andGo = message.b;
 					var inputModel = _Utils_update(
 						model,
 						{
@@ -5276,11 +5288,11 @@ var author$project$Trampoline$update = F4(
 					if (andGo.$ === 'AndGo') {
 						var $temp$updateInner = updateInner,
 							$temp$notify = notify,
-							$temp$msg = author$project$Trampoline$Go,
+							$temp$message = author$project$Trampoline$Go,
 							$temp$model = inputModel;
 						updateInner = $temp$updateInner;
 						notify = $temp$notify;
-						msg = $temp$msg;
+						message = $temp$message;
 						model = $temp$model;
 						continue update;
 					} else {
@@ -5289,14 +5301,14 @@ var author$project$Trampoline$update = F4(
 				case 'Go':
 					return author$project$Trampoline$doGo(model);
 				case 'Refuel':
-					var gas = msg.a;
+					var gas = message.a;
 					return A4(author$project$Trampoline$keepStepping, model, gas, updateInner, notify);
 				case 'Stop':
 					return _Utils_Tuple2(
 						author$project$Trampoline$doStop(model),
 						elm$core$Platform$Cmd$none);
 				default:
-					var msgInner = msg.a;
+					var msgInner = message.a;
 					var _n2 = A2(updateInner, msgInner, model.model);
 					var modelInnerNew = _n2.a;
 					var cmds = _n2.b;
@@ -5308,15 +5320,16 @@ var author$project$Trampoline$update = F4(
 			}
 		}
 	});
+var author$project$Trampoline$Fueled$Internal$defaultTankSize = author$project$Trampoline$Internal$defaultSteps;
 var author$project$Trampoline$Done = function (a) {
 	return {$: 'Done', a: a};
 };
 var author$project$Trampoline$Stepping = function (a) {
 	return {$: 'Stepping', a: a};
 };
-var author$project$Trampoline$Fueled$stepper = F2(
+var author$project$Trampoline$Fueled$Internal$stepper = F2(
 	function (tankSize, engine) {
-		var _n0 = A2(author$project$Trampoline$Fueled$run, engine, tankSize);
+		var _n0 = A2(author$project$Trampoline$Fueled$Internal$run, engine, tankSize);
 		var result = _n0.b;
 		if (result.$ === 'OutOfGas') {
 			var nextEngine = result.a;
@@ -5326,6 +5339,7 @@ var author$project$Trampoline$Fueled$stepper = F2(
 			return author$project$Trampoline$Done(a);
 		}
 	});
+var author$project$Trampoline$Fueled$stepper = author$project$Trampoline$Fueled$Internal$stepper(author$project$Trampoline$Fueled$Internal$defaultTankSize);
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
 };
@@ -5943,7 +5957,7 @@ var author$project$Simple$main = elm$browser$Browser$element(
 					},
 					author$project$Simple$initializeEngineCmd);
 			},
-			author$project$Trampoline$Fueled$stepper(1)),
+			author$project$Trampoline$Fueled$stepper),
 		subscriptions: author$project$Trampoline$subscriptions(
 			function (model) {
 				return A2(elm$time$Time$every, 100, author$project$Simple$Tick);
@@ -6022,7 +6036,7 @@ var author$project$Simple$main = elm$browser$Browser$element(
 											elm$html$Html$button,
 											_List_fromArray(
 												[
-													elm$html$Html$Events$onClick(author$project$Trampoline$Go)
+													elm$html$Html$Events$onClick(author$project$Trampoline$go)
 												]),
 											_List_fromArray(
 												[
@@ -6046,7 +6060,7 @@ var author$project$Simple$main = elm$browser$Browser$element(
 											elm$html$Html$button,
 											_List_fromArray(
 												[
-													elm$html$Html$Events$onClick(author$project$Trampoline$Stop)
+													elm$html$Html$Events$onClick(author$project$Trampoline$stop)
 												]),
 											_List_fromArray(
 												[
@@ -6070,7 +6084,7 @@ var author$project$Simple$main = elm$browser$Browser$element(
 											elm$html$Html$button,
 											_List_fromArray(
 												[
-													elm$html$Html$Events$onClick(author$project$Trampoline$Go)
+													elm$html$Html$Events$onClick(author$project$Trampoline$go)
 												]),
 											_List_fromArray(
 												[

@@ -48,7 +48,7 @@ withProgramText programText model =
 withResult : Result RunError Value -> AppModel -> AppModel
 withResult res model = { model | result = Just res }
 
-type alias Msg = T.Msg (TF.Fueled (Result RunError Value)) (Result RunError Value) AppMsg
+type alias Msg = T.Msg (TF.Fueled (Result RunError Value)) AppMsg
 
 type alias Model = T.Model (TF.Fueled (Result RunError Value)) (Result RunError Value) AppModel    
         
@@ -86,7 +86,7 @@ view model =
         [ textarea [ id "program"
                    , rows 15
                    , style "width" "100%"
-                   , onInput (\text -> T.Inner <| SetProgramText text)
+                   , onInput (\text -> T.msg <| SetProgramText text)
                    ]
               [ text model.model.programText ]
         , div [ id "programstate" ]
@@ -122,7 +122,7 @@ viewProgramState programState =
         PSTypeChecked expr ty ->
             div [ class "success" ]
                 [ span [] [ text ("Well typed: " ++ typeToString ty) ]
-                , input [ type_ "button", onClick (T.SetInput (evalF emptyEnv expr) T.AndGo)
+                , input [ type_ "button", onClick (T.setInput (evalF emptyEnv expr) T.AndGo)
                         , value "Run" ] [ ]
                 ]
 
@@ -134,10 +134,10 @@ viewRunState model =
         T.Running  _   -> div [] [ text "Running ("
                                  , text <| String.fromInt model.stats.numSteps
                                  , text " steps)"
-                                 , input [ type_ "button", onClick T.Stop, value "Stop" ] [ ]
+                                 , input [ type_ "button", onClick T.stop, value "Stop" ] [ ]
                                  ]
         T.Stopped  cfg -> div [] [ text "Stopped"
-                                 , input [ type_ "button", onClick T.Go, value "Resume" ] [ ]
+                                 , input [ type_ "button", onClick T.go, value "Resume" ] [ ]
                                  ]
         T.Finished _ -> div [] [ text "Done" ]
 

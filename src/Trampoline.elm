@@ -2,7 +2,11 @@ module Trampoline exposing
     ( Model
     , StepResult(..)
     , Stepper
-    , Msg(..)
+    , Msg
+    , setInput
+    , go
+    , stop
+    , msg
     , AndGo(..)
     , State(..)
     , Stats
@@ -31,7 +35,7 @@ sending messages.  Internally, long running computations use private
 messages to continue running while allowing other messages to be
 processed.
 
-@docs Msg, AndGo
+@docs Msg, setInput, AndGo, go, stop, msg
 
 # Models
 @docs State, Stats, Model
@@ -51,8 +55,6 @@ import Platform.Sub
 import Process
 import Task
 
--- TODO hide the Refuel constructor? can't hide exports, so we need to export functions
-
 {-| A `Stepper a o` is a function that takes a value of type `a`
 and either:
 
@@ -62,13 +64,13 @@ and either:
 
 For example, a stepper for a programming language might look like:
 
-   type alias ExprStepper = Stepper Expr (Result RuntimeError Value)
+    type alias ExprStepper = Stepper Expr (Result RuntimeError Value)
 
 The types `a` and `o` need not be different. A long running
 computation which always succeeds and produces an integer might use a
 stepper like:
 
-   type alias IntStepper = Stepper Int Int
+    type alias IntStepper = Stepper Int Int
 -}
 type alias Stepper a o = a -> StepResult a o
 
@@ -77,11 +79,39 @@ with an `o`.
 -}
 type StepResult a o = Stepping a | Done o
 
-{-| Internal messages used by Trampoline's stepper. These actually
-need to be hidden, with just `SetInput`, `Go`, and `Stop`, being
-exposed.
+{-| The messages used by Trampoline's stepper. The actual definition
+is abstract, but `setInput`, `go`, `stop`, and `msg` should suffice.
 -}
-type Msg a o msg = SetInput a AndGo | Go | Refuel Gas | Stop | Inner msg
+type Msg a msg = SetInput a AndGo | Go | Refuel Gas | Stop | Inner msg
+
+{-| Sets the input for the stepper function. You can set the input and start by running:
+
+    setInput 5 AndGo
+
+Or you can wait for a later `go` message by running:
+
+    setInput 5 AndWait
+-}
+setInput : a -> AndGo -> Msg a msg
+setInput a and = SetInput a and
+
+{-| Tells the stepper to go. It's harmless to send this message when
+there's no input, the stepper is already running, or the stepper is
+stopped.
+-}
+go : Msg a msg
+go = Go
+
+{-| Tells the stepper to step. It's harmless to send this message when
+there's no input or the stepper is already stopped.
+-}
+stop : Msg a msg
+stop = Stop
+
+{-| Turns a message from your application into a `Msg a msg`.
+-}
+msg : msg -> Msg a msg
+msg m = Inner m
 
 {-| Determines whether to immediately start running after `SetInput`
 or to wait for `Go` message.
@@ -127,10 +157,13 @@ type alias Model a o model =
 
 This is meant to be used with Browser.element, e.g.,
 
-    Browser.element { init = Trampoline.init myInit myStepper, ... }
+    Browser.element 
+      { init = Trampoline.init myInit myStepper
+      , ... }
 
+See `update` and `subscriptions`, too.
 -}
-init : (flags -> (model, Cmd (Msg a o msg))) -> Stepper a o -> flags -> (Model a o model, Cmd (Msg a o msg))
+init : (flags -> (model, Cmd (Msg a msg))) -> Stepper a o -> flags -> (Model a o model, Cmd (Msg a msg))
 init initInner stepper flags =
     let (inner, cmds) = initInner flags in
     ({ state = NoInput
@@ -147,15 +180,15 @@ init initInner stepper flags =
 --
 -- Make refuelAmount too low and your fueled computation runs too slowly.
 -- Make refuelAmount too high and your event loop might get unresponsive.
-refuelCmd : Gas -> Float -> Cmd (Msg a o msg)
+refuelCmd : Gas -> Float -> Cmd (Msg a msg)
 refuelCmd refuelAmount pauseTime =
     Task.perform (\() -> Refuel refuelAmount) (Process.sleep pauseTime)
 
 -- TODO a way to configure this... messages?
-defaultRefuel : Cmd (Msg a o msg)
-defaultRefuel = refuelCmd 5 20.0
+defaultRefuel : Cmd (Msg a msg)
+defaultRefuel = refuelCmd defaultSteps defaultPauseTime
 
-doGo : Model a o model -> (Model a o model, Cmd (Msg a o msg))
+doGo : Model a o model -> (Model a o model, Cmd (Msg a msg))
 doGo model =
     case model.state of
         NoInput    -> (model, Cmd.none)
@@ -174,7 +207,7 @@ countSteps steps model =
     let stats = model.stats in
     { model | stats = { stats | numSteps = stats.numSteps + steps, totalSteps = stats.totalSteps + steps } }
         
-keepStepping : Model a o model -> Gas -> (msg -> model -> (model, Cmd (Msg a o msg))) -> (o -> msg) -> (Model a o model, Cmd (Msg a o msg))
+keepStepping : Model a o model -> Gas -> (msg -> model -> (model, Cmd (Msg a msg))) -> (o -> msg) -> (Model a o model, Cmd (Msg a msg))
 keepStepping model gas updateInner notify =
     case model.state of
         NoInput -> (model, Cmd.none)
@@ -205,19 +238,21 @@ doStop model =
 
 {-| A wrapper for your program's `update` function. You must provide:
 
-- your inner update function, of type `(msg -> model -> (model, Cmd (Msg a o msg)))`
+- your inner update function, of type `(msg -> model -> (model, Cmd (Msg a msg)))`
 - a function that generates message when stepping is complete, of type `o -> msg`
 
 This is meant to be used with Browser.element, e.g.,
 
-    Browser.element { update = Trampoline.init myUpdate NotifyMsg, ... }
+    Browser.element 
+    { update = Trampoline.init myUpdate NotifyMsg
+    , ... }
 
 where `NotifyMsg` is some message defined in your application of type `o -> msg`.
 -}                
-update : (msg -> model -> (model, Cmd (Msg a o msg))) -> (o -> msg) ->
-         Msg a o msg -> Model a o model -> (Model a o model, Cmd (Msg a o msg))
-update updateInner notify msg model =
-    case msg of
+update : (msg -> model -> (model, Cmd (Msg a msg))) -> (o -> msg) ->
+         Msg a msg -> Model a o model -> (Model a o model, Cmd (Msg a msg))
+update updateInner notify message model =
+    case message of
         SetInput a andGo ->
             let inputModel = { model | state = HasInput a } in
             case andGo of
@@ -232,5 +267,5 @@ update updateInner notify msg model =
 
 {-| A wrapper for your program's `subscriptions` function, which amounts to running `Platform.Sub.map`.
 -}
-subscriptions : (model -> Platform.Sub.Sub msg) -> Model a o model -> Platform.Sub.Sub (Msg a o msg)
+subscriptions : (model -> Platform.Sub.Sub msg) -> Model a o model -> Platform.Sub.Sub (Msg a msg)
 subscriptions subscriptionsInner model = subscriptionsInner model.model |> Platform.Sub.map Inner

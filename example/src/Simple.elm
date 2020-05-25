@@ -9,8 +9,8 @@ import Task
 import Time
 
 import Trampoline as T
-import Trampoline.Fueled exposing (Fueled, RunResult(..), run, andThen, return, burn, mkEngine)
-import Trampoline.Examples exposing (betterDiverge)
+import Trampoline.Fueled exposing (Fueled)
+import Trampoline.Fueled.Examples exposing (bestDiverge)
 
 type AppMsg = Tick Time.Posix
             | Finished Int
@@ -19,15 +19,15 @@ type alias AppModel =
     { time : Time.Posix
     }   
 
-type alias Msg = T.Msg (Fueled Int) Int AppMsg
+type alias Msg = T.Msg (Fueled Int) AppMsg
     
 initializeEngineCmd : Cmd Msg
 initializeEngineCmd =
-    Task.perform (\() -> T.SetInput (betterDiverge 0) T.AndWait) (Process.sleep 1.0)
+    Task.perform (\() -> T.setInput (bestDiverge 0) T.AndWait) (Process.sleep 1.0)
 
 -- sample main tying it together
 main = Browser.element 
-    { init = T.init (\() -> ({ time = Time.millisToPosix 0 }, initializeEngineCmd)) (Trampoline.Fueled.stepper 1)
+    { init = T.init (\() -> ({ time = Time.millisToPosix 0 }, initializeEngineCmd)) Trampoline.Fueled.stepper
     , view = \model ->
         div []
             [ h1 [] [ text "Trampoline example app" ]
@@ -36,14 +36,14 @@ main = Browser.element
             , div [] (case model.state of
                           T.NoInput -> [ div [] [ text "loading" ] ]
                           T.HasInput _ -> [ div [] [ text "ready" ]
-                                          , button [ onClick T.Go ] [ text "go" ] ]
+                                          , button [ onClick T.go ] [ text "go" ] ]
                           T.Running f -> [ div [] [ text "running, used gas: ",
                                                         text <| String.fromInt model.stats.numSteps ]
-                                         , button [ onClick T.Stop ] [ text "stop" ]
+                                         , button [ onClick T.stop ] [ text "stop" ]
                                          ]
                           T.Stopped f -> [ div [] [ text "stopped, used gas: ",
                                                         text <| String.fromInt model.stats.numSteps ]
-                                         , button [ onClick T.Go ] [ text "resume" ]
+                                         , button [ onClick T.go ] [ text "resume" ]
                                          ]
                           T.Finished n -> [ text "done (?!) @ ", String.fromInt n |> text ])
             , div []
