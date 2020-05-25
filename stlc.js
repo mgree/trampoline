@@ -4976,326 +4976,6 @@ var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$STLC$init = function (_n0) {
 	return _Utils_Tuple2(author$project$STLC$initialModel, elm$core$Platform$Cmd$none);
 };
-var author$project$STLC$AppliedNonFunction = F2(
-	function (a, b) {
-		return {$: 'AppliedNonFunction', a: a, b: b};
-	});
-var author$project$STLC$ELam = F3(
-	function (a, b, c) {
-		return {$: 'ELam', a: a, b: b, c: c};
-	});
-var author$project$STLC$ENum = function (a) {
-	return {$: 'ENum', a: a};
-};
-var author$project$STLC$KAppL = F2(
-	function (a, b) {
-		return {$: 'KAppL', a: a, b: b};
-	});
-var author$project$STLC$KAppR = F5(
-	function (a, b, c, d, e) {
-		return {$: 'KAppR', a: a, b: b, c: c, d: d, e: e};
-	});
-var author$project$STLC$UndefinedVariable = function (a) {
-	return {$: 'UndefinedVariable', a: a};
-};
-var author$project$STLC$VClo = F4(
-	function (a, b, c, d) {
-		return {$: 'VClo', a: a, b: b, c: c, d: d};
-	});
-var author$project$STLC$VNum = function (a) {
-	return {$: 'VNum', a: a};
-};
-var elm$core$Dict$Black = {$: 'Black'};
-var elm$core$Dict$RBNode_elm_builtin = F5(
-	function (a, b, c, d, e) {
-		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
-	});
-var elm$core$Basics$compare = _Utils_compare;
-var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var elm$core$Dict$Red = {$: 'Red'};
-var elm$core$Dict$balance = F5(
-	function (color, key, value, left, right) {
-		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
-			var _n1 = right.a;
-			var rK = right.b;
-			var rV = right.c;
-			var rLeft = right.d;
-			var rRight = right.e;
-			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
-				var _n3 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var lLeft = left.d;
-				var lRight = left.e;
-				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Red,
-					key,
-					value,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
-					color,
-					rK,
-					rV,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, left, rLeft),
-					rRight);
-			}
-		} else {
-			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
-				var _n5 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var _n6 = left.d;
-				var _n7 = _n6.a;
-				var llK = _n6.b;
-				var llV = _n6.c;
-				var llLeft = _n6.d;
-				var llRight = _n6.e;
-				var lRight = left.e;
-				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Red,
-					lK,
-					lV,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, llK, llV, llLeft, llRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, key, value, lRight, right));
-			} else {
-				return A5(elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
-			}
-		}
-	});
-var elm$core$Dict$insertHelp = F3(
-	function (key, value, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, elm$core$Dict$RBEmpty_elm_builtin, elm$core$Dict$RBEmpty_elm_builtin);
-		} else {
-			var nColor = dict.a;
-			var nKey = dict.b;
-			var nValue = dict.c;
-			var nLeft = dict.d;
-			var nRight = dict.e;
-			var _n1 = A2(elm$core$Basics$compare, key, nKey);
-			switch (_n1.$) {
-				case 'LT':
-					return A5(
-						elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						A3(elm$core$Dict$insertHelp, key, value, nLeft),
-						nRight);
-				case 'EQ':
-					return A5(elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
-				default:
-					return A5(
-						elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						nLeft,
-						A3(elm$core$Dict$insertHelp, key, value, nRight));
-			}
-		}
-	});
-var elm$core$Dict$insert = F3(
-	function (key, value, dict) {
-		var _n0 = A3(elm$core$Dict$insertHelp, key, value, dict);
-		if ((_n0.$ === 'RBNode_elm_builtin') && (_n0.a.$ === 'Red')) {
-			var _n1 = _n0.a;
-			var k = _n0.b;
-			var v = _n0.c;
-			var l = _n0.d;
-			var r = _n0.e;
-			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, k, v, l, r);
-		} else {
-			var x = _n0;
-			return x;
-		}
-	});
-var author$project$STLC$extendVal = F3(
-	function (env, x, v) {
-		return A3(elm$core$Dict$insert, x, v, env);
-	});
-var elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _n1 = A2(elm$core$Basics$compare, targetKey, key);
-				switch (_n1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
-	});
-var author$project$STLC$lookupVal = F2(
-	function (env, x) {
-		return A2(elm$core$Dict$get, x, env);
-	});
-var author$project$Trampoline$Done = function (a) {
-	return {$: 'Done', a: a};
-};
-var author$project$Trampoline$Stepping = function (a) {
-	return {$: 'Stepping', a: a};
-};
-var author$project$STLC$step = function (cfg) {
-	var env = cfg.env;
-	var error = function (err) {
-		return author$project$Trampoline$Done(
-			elm$core$Result$Err(err));
-	};
-	var done = function (v) {
-		return author$project$Trampoline$Done(
-			elm$core$Result$Ok(v));
-	};
-	var running = F3(
-		function (newE, newEnv, newK) {
-			return author$project$Trampoline$Stepping(
-				{env: newEnv, expr: newE, kont: newK});
-		});
-	var _n0 = _Utils_Tuple2(cfg.expr, cfg.kont);
-	switch (_n0.a.$) {
-		case 'EVar':
-			var x = _n0.a.a;
-			var k = _n0.b;
-			var _n1 = A2(author$project$STLC$lookupVal, cfg.env, x);
-			if (_n1.$ === 'Nothing') {
-				return error(
-					author$project$STLC$UndefinedVariable(x));
-			} else {
-				if (_n1.a.$ === 'VNum') {
-					var n = _n1.a.a;
-					return A3(
-						running,
-						author$project$STLC$ENum(n),
-						env,
-						k);
-				} else {
-					var _n2 = _n1.a;
-					var y = _n2.a;
-					var ty1 = _n2.b;
-					var eBody = _n2.c;
-					var envClo = _n2.d;
-					return A3(
-						running,
-						A3(author$project$STLC$ELam, y, ty1, eBody),
-						envClo,
-						k);
-				}
-			}
-		case 'EApp':
-			var _n3 = _n0.a;
-			var e1 = _n3.a;
-			var e2 = _n3.b;
-			var k = _n0.b;
-			return A3(
-				running,
-				e1,
-				env,
-				A2(author$project$STLC$KAppL, e2, k));
-		case 'ELam':
-			switch (_n0.b.$) {
-				case 'KAppL':
-					var _n4 = _n0.a;
-					var x = _n4.a;
-					var ty1 = _n4.b;
-					var eBody = _n4.c;
-					var _n5 = _n0.b;
-					var eArg = _n5.a;
-					var k = _n5.b;
-					return A3(
-						running,
-						eArg,
-						env,
-						A5(author$project$STLC$KAppR, x, ty1, eBody, env, k));
-				case 'KAppR':
-					var _n7 = _n0.a;
-					var argX = _n7.a;
-					var argTy = _n7.b;
-					var argBody = _n7.c;
-					var _n8 = _n0.b;
-					var x = _n8.a;
-					var ty1 = _n8.b;
-					var eBody = _n8.c;
-					var envClo = _n8.d;
-					var k = _n8.e;
-					return A3(
-						running,
-						eBody,
-						A3(
-							author$project$STLC$extendVal,
-							envClo,
-							x,
-							A4(author$project$STLC$VClo, argX, argTy, argBody, env)),
-						k);
-				default:
-					var _n10 = _n0.a;
-					var x = _n10.a;
-					var ty = _n10.b;
-					var body = _n10.c;
-					var _n11 = _n0.b;
-					return done(
-						A4(author$project$STLC$VClo, x, ty, body, env));
-			}
-		default:
-			switch (_n0.b.$) {
-				case 'KAppL':
-					var n = _n0.a.a;
-					var _n6 = _n0.b;
-					var eArg = _n6.a;
-					var k = _n6.b;
-					return error(
-						A2(
-							author$project$STLC$AppliedNonFunction,
-							author$project$STLC$VNum(n),
-							eArg));
-				case 'KAppR':
-					var n = _n0.a.a;
-					var _n9 = _n0.b;
-					var x = _n9.a;
-					var ty1 = _n9.b;
-					var eBody = _n9.c;
-					var envClo = _n9.d;
-					var k = _n9.e;
-					return A3(
-						running,
-						eBody,
-						A3(
-							author$project$STLC$extendVal,
-							envClo,
-							x,
-							author$project$STLC$VNum(n)),
-						k);
-				default:
-					var n = _n0.a.a;
-					var _n12 = _n0.b;
-					return done(
-						author$project$STLC$VNum(n));
-			}
-	}
-};
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$STLC$subscriptions = function (model) {
@@ -5309,13 +4989,21 @@ var author$project$STLC$PSTypeChecked = F2(
 	function (a, b) {
 		return {$: 'PSTypeChecked', a: a, b: b};
 	});
+var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
-var author$project$STLC$emptyCtx = elm$core$Dict$empty;
-var author$project$STLC$EApp = F2(
+var author$project$STLC$Internal$emptyCtx = elm$core$Dict$empty;
+var author$project$STLC$Internal$EApp = F2(
 	function (a, b) {
 		return {$: 'EApp', a: a, b: b};
 	});
-var author$project$STLC$EVar = function (a) {
+var author$project$STLC$Internal$ELam = F3(
+	function (a, b, c) {
+		return {$: 'ELam', a: a, b: b, c: c};
+	});
+var author$project$STLC$Internal$ENum = function (a) {
+	return {$: 'ENum', a: a};
+};
+var author$project$STLC$Internal$EVar = function (a) {
 	return {$: 'EVar', a: a};
 };
 var elm$core$Basics$identity = function (x) {
@@ -5587,7 +5275,7 @@ var elm$parser$Parser$Advanced$succeed = function (a) {
 		});
 };
 var elm$parser$Parser$succeed = elm$parser$Parser$Advanced$succeed;
-var author$project$STLC$listL1 = function (p) {
+var author$project$STLC$Internal$listL1 = function (p) {
 	var helper = function (items) {
 		return A2(
 			elm$parser$Parser$keeper,
@@ -5680,7 +5368,7 @@ var elm$parser$Parser$symbol = function (str) {
 			str,
 			elm$parser$Parser$ExpectingSymbol(str)));
 };
-var author$project$STLC$parens = function (p) {
+var author$project$STLC$Internal$parens = function (p) {
 	return A2(
 		elm$parser$Parser$keeper,
 		A2(
@@ -5698,11 +5386,11 @@ var author$project$STLC$parens = function (p) {
 			A2(elm$parser$Parser$ignorer, p, elm$parser$Parser$spaces),
 			elm$parser$Parser$symbol(')')));
 };
-var author$project$STLC$TFun = F2(
+var author$project$STLC$Internal$TFun = F2(
 	function (a, b) {
 		return {$: 'TFun', a: a, b: b};
 	});
-var author$project$STLC$TInt = {$: 'TInt'};
+var author$project$STLC$Internal$TInt = {$: 'TInt'};
 var elm$parser$Parser$Advanced$andThen = F2(
 	function (callback, _n0) {
 		var parseA = _n0.a;
@@ -5734,7 +5422,7 @@ var elm$parser$Parser$Advanced$andThen = F2(
 			});
 	});
 var elm$parser$Parser$andThen = elm$parser$Parser$Advanced$andThen;
-var author$project$STLC$sepByR1 = F2(
+var author$project$STLC$Internal$sepByR1 = F2(
 	function (parseItem, parseSep) {
 		var helper = function (items) {
 			return A2(
@@ -5869,27 +5557,27 @@ var elm$parser$Parser$Advanced$lazy = function (thunk) {
 		});
 };
 var elm$parser$Parser$lazy = elm$parser$Parser$Advanced$lazy;
-function author$project$STLC$cyclic$parseType() {
+function author$project$STLC$Internal$cyclic$parseType() {
 	return A2(
 		elm$parser$Parser$keeper,
 		elm$parser$Parser$succeed(
 			function (_n1) {
 				var lhs = _n1.a;
 				var rhs = _n1.b;
-				return A3(elm$core$List$foldr, author$project$STLC$TFun, rhs, lhs);
+				return A3(elm$core$List$foldr, author$project$STLC$Internal$TFun, rhs, lhs);
 			}),
 		A2(
 			elm$parser$Parser$ignorer,
 			A2(
-				author$project$STLC$sepByR1,
-				author$project$STLC$cyclic$parseAtomicType(),
+				author$project$STLC$Internal$sepByR1,
+				author$project$STLC$Internal$cyclic$parseAtomicType(),
 				A2(
 					elm$parser$Parser$ignorer,
 					elm$parser$Parser$symbol('->'),
 					elm$parser$Parser$spaces)),
 			elm$parser$Parser$spaces));
 }
-function author$project$STLC$cyclic$parseAtomicType() {
+function author$project$STLC$Internal$cyclic$parseAtomicType() {
 	return A2(
 		elm$parser$Parser$keeper,
 		A2(
@@ -5903,27 +5591,32 @@ function author$project$STLC$cyclic$parseAtomicType() {
 					[
 						A2(
 						elm$parser$Parser$ignorer,
-						elm$parser$Parser$succeed(author$project$STLC$TInt),
+						elm$parser$Parser$succeed(author$project$STLC$Internal$TInt),
 						elm$parser$Parser$keyword('int')),
-						author$project$STLC$parens(
+						author$project$STLC$Internal$parens(
 						elm$parser$Parser$lazy(
 							function (_n0) {
-								return author$project$STLC$cyclic$parseType();
+								return author$project$STLC$Internal$cyclic$parseType();
 							}))
 					])),
 			elm$parser$Parser$spaces));
 }
 try {
-	var author$project$STLC$parseType = author$project$STLC$cyclic$parseType();
-	author$project$STLC$cyclic$parseType = function () {
-		return author$project$STLC$parseType;
+	var author$project$STLC$Internal$parseType = author$project$STLC$Internal$cyclic$parseType();
+	author$project$STLC$Internal$cyclic$parseType = function () {
+		return author$project$STLC$Internal$parseType;
 	};
-	var author$project$STLC$parseAtomicType = author$project$STLC$cyclic$parseAtomicType();
-	author$project$STLC$cyclic$parseAtomicType = function () {
-		return author$project$STLC$parseAtomicType;
+	var author$project$STLC$Internal$parseAtomicType = author$project$STLC$Internal$cyclic$parseAtomicType();
+	author$project$STLC$Internal$cyclic$parseAtomicType = function () {
+		return author$project$STLC$Internal$parseAtomicType;
 	};
 } catch ($) {
-throw 'Some top-level definitions from `STLC` are causing infinite recursion:\n\n  ┌─────┐\n  │    parseType\n  │     ↓\n  │    parseAtomicType\n  └─────┘\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.0/halting-problem to learn how to fix it!';}
+throw 'Some top-level definitions from `STLC.Internal` are causing infinite recursion:\n\n  ┌─────┐\n  │    parseType\n  │     ↓\n  │    parseAtomicType\n  └─────┘\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.0/halting-problem to learn how to fix it!';}
+var elm$core$Dict$Black = {$: 'Black'};
+var elm$core$Dict$RBNode_elm_builtin = F5(
+	function (a, b, c, d, e) {
+		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
+	});
 var elm$core$Dict$singleton = F2(
 	function (key, value) {
 		return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, key, value, elm$core$Dict$RBEmpty_elm_builtin, elm$core$Dict$RBEmpty_elm_builtin);
@@ -5935,8 +5628,40 @@ var elm$core$Set$singleton = function (key) {
 	return elm$core$Set$Set_elm_builtin(
 		A2(elm$core$Dict$singleton, key, _Utils_Tuple0));
 };
-var author$project$STLC$keywords = elm$core$Set$singleton('int');
+var author$project$STLC$Internal$keywords = elm$core$Set$singleton('int');
 var elm$parser$Parser$ExpectingVariable = {$: 'ExpectingVariable'};
+var elm$core$Basics$compare = _Utils_compare;
+var elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _n1 = A2(elm$core$Basics$compare, targetKey, key);
+				switch (_n1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
+		}
+	});
 var elm$core$Dict$member = F2(
 	function (key, dict) {
 		var _n0 = A2(elm$core$Dict$get, key, dict);
@@ -6019,14 +5744,14 @@ var elm$parser$Parser$variable = function (i) {
 	return elm$parser$Parser$Advanced$variable(
 		{expecting: elm$parser$Parser$ExpectingVariable, inner: i.inner, reserved: i.reserved, start: i.start});
 };
-var author$project$STLC$parseVar = elm$parser$Parser$variable(
+var author$project$STLC$Internal$parseVar = elm$parser$Parser$variable(
 	{
 		inner: function (c) {
 			return elm$core$Char$isAlphaNum(c) || _Utils_eq(
 				c,
 				_Utils_chr('_'));
 		},
-		reserved: author$project$STLC$keywords,
+		reserved: author$project$STLC$Internal$keywords,
 		start: elm$core$Char$isAlpha
 	});
 var elm$parser$Parser$ExpectingInt = {$: 'ExpectingInt'};
@@ -6191,7 +5916,7 @@ var elm$parser$Parser$Advanced$int = F2(
 			});
 	});
 var elm$parser$Parser$int = A2(elm$parser$Parser$Advanced$int, elm$parser$Parser$ExpectingInt, elm$parser$Parser$ExpectingInt);
-function author$project$STLC$cyclic$parseExpr() {
+function author$project$STLC$Internal$cyclic$parseExpr() {
 	return A2(
 		elm$parser$Parser$keeper,
 		elm$parser$Parser$succeed(
@@ -6202,15 +5927,15 @@ function author$project$STLC$cyclic$parseExpr() {
 					elm$core$List$foldl,
 					F2(
 						function (r, l) {
-							return A2(author$project$STLC$EApp, l, r);
+							return A2(author$project$STLC$Internal$EApp, l, r);
 						}),
 					lhs,
 					rhs);
 			}),
-		author$project$STLC$listL1(
-			author$project$STLC$cyclic$parseAtomicExpr()));
+		author$project$STLC$Internal$listL1(
+			author$project$STLC$Internal$cyclic$parseAtomicExpr()));
 }
-function author$project$STLC$cyclic$parseAtomicExpr() {
+function author$project$STLC$Internal$cyclic$parseAtomicExpr() {
 	return A2(
 		elm$parser$Parser$keeper,
 		A2(
@@ -6222,12 +5947,12 @@ function author$project$STLC$cyclic$parseAtomicExpr() {
 				[
 					A2(
 					elm$parser$Parser$keeper,
-					elm$parser$Parser$succeed(author$project$STLC$ENum),
+					elm$parser$Parser$succeed(author$project$STLC$Internal$ENum),
 					elm$parser$Parser$int),
 					A2(
 					elm$parser$Parser$keeper,
-					elm$parser$Parser$succeed(author$project$STLC$EVar),
-					author$project$STLC$parseVar),
+					elm$parser$Parser$succeed(author$project$STLC$Internal$EVar),
+					author$project$STLC$Internal$parseVar),
 					A2(
 					elm$parser$Parser$keeper,
 					A2(
@@ -6238,61 +5963,164 @@ function author$project$STLC$cyclic$parseAtomicExpr() {
 								elm$parser$Parser$ignorer,
 								A2(
 									elm$parser$Parser$ignorer,
-									elm$parser$Parser$succeed(author$project$STLC$ELam),
+									elm$parser$Parser$succeed(author$project$STLC$Internal$ELam),
 									elm$parser$Parser$symbol('\\')),
 								elm$parser$Parser$spaces),
 							A2(
 								elm$parser$Parser$ignorer,
 								A2(
 									elm$parser$Parser$ignorer,
-									A2(elm$parser$Parser$ignorer, author$project$STLC$parseVar, elm$parser$Parser$spaces),
+									A2(elm$parser$Parser$ignorer, author$project$STLC$Internal$parseVar, elm$parser$Parser$spaces),
 									elm$parser$Parser$symbol(':')),
 								elm$parser$Parser$spaces)),
 						A2(
 							elm$parser$Parser$ignorer,
 							A2(
 								elm$parser$Parser$ignorer,
-								A2(elm$parser$Parser$ignorer, author$project$STLC$parseType, elm$parser$Parser$spaces),
+								A2(elm$parser$Parser$ignorer, author$project$STLC$Internal$parseType, elm$parser$Parser$spaces),
 								elm$parser$Parser$symbol('.')),
 							elm$parser$Parser$spaces)),
 					elm$parser$Parser$lazy(
 						function (_n0) {
-							return author$project$STLC$cyclic$parseExpr();
+							return author$project$STLC$Internal$cyclic$parseExpr();
 						})),
-					author$project$STLC$parens(
+					author$project$STLC$Internal$parens(
 					elm$parser$Parser$lazy(
 						function (_n1) {
-							return author$project$STLC$cyclic$parseExpr();
+							return author$project$STLC$Internal$cyclic$parseExpr();
 						}))
 				])));
 }
 try {
-	var author$project$STLC$parseExpr = author$project$STLC$cyclic$parseExpr();
-	author$project$STLC$cyclic$parseExpr = function () {
-		return author$project$STLC$parseExpr;
+	var author$project$STLC$Internal$parseExpr = author$project$STLC$Internal$cyclic$parseExpr();
+	author$project$STLC$Internal$cyclic$parseExpr = function () {
+		return author$project$STLC$Internal$parseExpr;
 	};
-	var author$project$STLC$parseAtomicExpr = author$project$STLC$cyclic$parseAtomicExpr();
-	author$project$STLC$cyclic$parseAtomicExpr = function () {
-		return author$project$STLC$parseAtomicExpr;
+	var author$project$STLC$Internal$parseAtomicExpr = author$project$STLC$Internal$cyclic$parseAtomicExpr();
+	author$project$STLC$Internal$cyclic$parseAtomicExpr = function () {
+		return author$project$STLC$Internal$parseAtomicExpr;
 	};
 } catch ($) {
-throw 'Some top-level definitions from `STLC` are causing infinite recursion:\n\n  ┌─────┐\n  │    parseExpr\n  │     ↓\n  │    parseAtomicExpr\n  └─────┘\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.0/halting-problem to learn how to fix it!';}
-var author$project$STLC$ApplicationMismatch = F4(
+throw 'Some top-level definitions from `STLC.Internal` are causing infinite recursion:\n\n  ┌─────┐\n  │    parseExpr\n  │     ↓\n  │    parseAtomicExpr\n  └─────┘\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.0/halting-problem to learn how to fix it!';}
+var author$project$STLC$Internal$ApplicationMismatch = F4(
 	function (a, b, c, d) {
 		return {$: 'ApplicationMismatch', a: a, b: b, c: c, d: d};
 	});
-var author$project$STLC$ExpectedFunction = F2(
+var author$project$STLC$Internal$ExpectedFunction = F2(
 	function (a, b) {
 		return {$: 'ExpectedFunction', a: a, b: b};
 	});
-var author$project$STLC$NoSuchVariable = function (a) {
+var author$project$STLC$Internal$NoSuchVariable = function (a) {
 	return {$: 'NoSuchVariable', a: a};
 };
-var author$project$STLC$extendType = F3(
+var elm$core$Dict$Red = {$: 'Red'};
+var elm$core$Dict$balance = F5(
+	function (color, key, value, left, right) {
+		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
+			var _n1 = right.a;
+			var rK = right.b;
+			var rV = right.c;
+			var rLeft = right.d;
+			var rRight = right.e;
+			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+				var _n3 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var lLeft = left.d;
+				var lRight = left.e;
+				return A5(
+					elm$core$Dict$RBNode_elm_builtin,
+					elm$core$Dict$Red,
+					key,
+					value,
+					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, lK, lV, lLeft, lRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					elm$core$Dict$RBNode_elm_builtin,
+					color,
+					rK,
+					rV,
+					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, left, rLeft),
+					rRight);
+			}
+		} else {
+			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
+				var _n5 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var _n6 = left.d;
+				var _n7 = _n6.a;
+				var llK = _n6.b;
+				var llV = _n6.c;
+				var llLeft = _n6.d;
+				var llRight = _n6.e;
+				var lRight = left.e;
+				return A5(
+					elm$core$Dict$RBNode_elm_builtin,
+					elm$core$Dict$Red,
+					lK,
+					lV,
+					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, llK, llV, llLeft, llRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, key, value, lRight, right));
+			} else {
+				return A5(elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
+			}
+		}
+	});
+var elm$core$Dict$insertHelp = F3(
+	function (key, value, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, elm$core$Dict$RBEmpty_elm_builtin, elm$core$Dict$RBEmpty_elm_builtin);
+		} else {
+			var nColor = dict.a;
+			var nKey = dict.b;
+			var nValue = dict.c;
+			var nLeft = dict.d;
+			var nRight = dict.e;
+			var _n1 = A2(elm$core$Basics$compare, key, nKey);
+			switch (_n1.$) {
+				case 'LT':
+					return A5(
+						elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						A3(elm$core$Dict$insertHelp, key, value, nLeft),
+						nRight);
+				case 'EQ':
+					return A5(elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
+				default:
+					return A5(
+						elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						nLeft,
+						A3(elm$core$Dict$insertHelp, key, value, nRight));
+			}
+		}
+	});
+var elm$core$Dict$insert = F3(
+	function (key, value, dict) {
+		var _n0 = A3(elm$core$Dict$insertHelp, key, value, dict);
+		if ((_n0.$ === 'RBNode_elm_builtin') && (_n0.a.$ === 'Red')) {
+			var _n1 = _n0.a;
+			var k = _n0.b;
+			var v = _n0.c;
+			var l = _n0.d;
+			var r = _n0.e;
+			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, k, v, l, r);
+		} else {
+			var x = _n0;
+			return x;
+		}
+	});
+var author$project$STLC$Internal$extendType = F3(
 	function (g, x, ty) {
 		return A3(elm$core$Dict$insert, x, ty, g);
 	});
-var author$project$STLC$lookupType = F2(
+var author$project$STLC$Internal$lookupType = F2(
 	function (g, x) {
 		return A2(elm$core$Dict$get, x, g);
 	});
@@ -6305,24 +6133,24 @@ var elm$core$Result$fromMaybe = F2(
 			return elm$core$Result$Err(err);
 		}
 	});
-var author$project$STLC$typeOf = F2(
+var author$project$STLC$Internal$typeOf = F2(
 	function (g, e) {
 		switch (e.$) {
 			case 'EVar':
 				var x = e.a;
 				return A2(
 					elm$core$Result$fromMaybe,
-					author$project$STLC$NoSuchVariable(x),
-					A2(author$project$STLC$lookupType, g, x));
+					author$project$STLC$Internal$NoSuchVariable(x),
+					A2(author$project$STLC$Internal$lookupType, g, x));
 			case 'ENum':
-				return elm$core$Result$Ok(author$project$STLC$TInt);
+				return elm$core$Result$Ok(author$project$STLC$Internal$TInt);
 			case 'ELam':
 				var x = e.a;
 				var ty1 = e.b;
 				var eBody = e.c;
 				var _n1 = A2(
-					author$project$STLC$typeOf,
-					A3(author$project$STLC$extendType, g, x, ty1),
+					author$project$STLC$Internal$typeOf,
+					A3(author$project$STLC$Internal$extendType, g, x, ty1),
 					eBody);
 				if (_n1.$ === 'Err') {
 					var err = _n1.a;
@@ -6330,14 +6158,14 @@ var author$project$STLC$typeOf = F2(
 				} else {
 					var ty2 = _n1.a;
 					return elm$core$Result$Ok(
-						A2(author$project$STLC$TFun, ty1, ty2));
+						A2(author$project$STLC$Internal$TFun, ty1, ty2));
 				}
 			default:
 				var e1 = e.a;
 				var e2 = e.b;
 				var _n2 = _Utils_Tuple2(
-					A2(author$project$STLC$typeOf, g, e1),
-					A2(author$project$STLC$typeOf, g, e2));
+					A2(author$project$STLC$Internal$typeOf, g, e1),
+					A2(author$project$STLC$Internal$typeOf, g, e2));
 				if (_n2.a.$ === 'Err') {
 					var err1 = _n2.a.a;
 					return elm$core$Result$Err(err1);
@@ -6352,11 +6180,11 @@ var author$project$STLC$typeOf = F2(
 							var ty12 = _n3.b;
 							var ty2 = _n2.b.a;
 							return _Utils_eq(ty11, ty2) ? elm$core$Result$Ok(ty12) : elm$core$Result$Err(
-								A4(author$project$STLC$ApplicationMismatch, ty11, e1, ty2, e2));
+								A4(author$project$STLC$Internal$ApplicationMismatch, ty11, e1, ty2, e2));
 						} else {
 							var ty1 = _n2.a.a;
 							return elm$core$Result$Err(
-								A2(author$project$STLC$ExpectedFunction, ty1, e1));
+								A2(author$project$STLC$Internal$ExpectedFunction, ty1, e1));
 						}
 					}
 				}
@@ -6438,13 +6266,13 @@ var elm$parser$Parser$run = F2(
 var author$project$STLC$withProgramText = F2(
 	function (programText, model) {
 		var programState = function () {
-			var _n0 = A2(elm$parser$Parser$run, author$project$STLC$parseExpr, programText);
+			var _n0 = A2(elm$parser$Parser$run, author$project$STLC$Internal$parseExpr, programText);
 			if (_n0.$ === 'Err') {
 				var err = _n0.a;
 				return author$project$STLC$PSUnparsed(err);
 			} else {
 				var expr = _n0.a;
-				var _n1 = A2(author$project$STLC$typeOf, author$project$STLC$emptyCtx, expr);
+				var _n1 = A2(author$project$STLC$Internal$typeOf, author$project$STLC$Internal$emptyCtx, expr);
 				if (_n1.$ === 'Err') {
 					var err = _n1.a;
 					return A2(author$project$STLC$PSIllTyped, expr, err);
@@ -6563,7 +6391,7 @@ var author$project$STLC$viewGrammar = A2(
 					elm$html$Html$text('expressions: e ::= x | n | e1 e2 | \\x:ty. e')
 				]))
 		]));
-var author$project$STLC$deadEndsToString = function (deadEnds) {
+var author$project$STLC$Internal$deadEndsToString = function (deadEnds) {
 	var deadEndToString = function (deadEnd) {
 		var position = 'row:' + (elm$core$String$fromInt(deadEnd.row) + (' col:' + (elm$core$String$fromInt(deadEnd.col) + '\n')));
 		var _n0 = deadEnd.problem;
@@ -6608,13 +6436,161 @@ var author$project$STLC$deadEndsToString = function (deadEnds) {
 		'',
 		A2(elm$core$List$map, deadEndToString, deadEnds));
 };
-var author$project$STLC$emptyEnv = elm$core$Dict$empty;
-var author$project$STLC$KEmpty = {$: 'KEmpty'};
-var author$project$STLC$mkConfig = F2(
-	function (env, e) {
-		return {env: env, expr: e, kont: author$project$STLC$KEmpty};
+var author$project$STLC$Internal$emptyEnv = elm$core$Dict$empty;
+var author$project$STLC$Internal$AppliedNonFunction = F2(
+	function (a, b) {
+		return {$: 'AppliedNonFunction', a: a, b: b};
 	});
-var author$project$STLC$typeToString = function (ty) {
+var author$project$STLC$Internal$UndefinedVariable = function (a) {
+	return {$: 'UndefinedVariable', a: a};
+};
+var author$project$STLC$Internal$VClo = F4(
+	function (a, b, c, d) {
+		return {$: 'VClo', a: a, b: b, c: c, d: d};
+	});
+var author$project$STLC$Internal$VNum = function (a) {
+	return {$: 'VNum', a: a};
+};
+var author$project$STLC$Internal$extendVal = F3(
+	function (env, x, v) {
+		return A3(elm$core$Dict$insert, x, v, env);
+	});
+var author$project$STLC$Internal$lookupVal = F2(
+	function (env, x) {
+		return A2(elm$core$Dict$get, x, env);
+	});
+var author$project$Trampoline$Fueled$Internal$OutOfGas = function (a) {
+	return {$: 'OutOfGas', a: a};
+};
+var author$project$Trampoline$Fueled$Internal$run = F2(
+	function (engine, tank0) {
+		return (tank0 <= 0) ? _Utils_Tuple2(
+			0,
+			author$project$Trampoline$Fueled$Internal$OutOfGas(engine)) : engine(tank0);
+	});
+var author$project$Trampoline$Fueled$andThen = F2(
+	function (cont, engineA) {
+		return function (tank0) {
+			var _n0 = A2(author$project$Trampoline$Fueled$Internal$run, engineA, tank0);
+			var tank1 = _n0.a;
+			var result = _n0.b;
+			if (result.$ === 'OutOfGas') {
+				var k = result.a;
+				return _Utils_Tuple2(
+					tank1,
+					author$project$Trampoline$Fueled$Internal$OutOfGas(
+						A2(author$project$Trampoline$Fueled$andThen, cont, k)));
+			} else {
+				var v = result.a;
+				return A2(
+					author$project$Trampoline$Fueled$Internal$run,
+					cont(v),
+					tank1);
+			}
+		};
+	});
+var author$project$Trampoline$Fueled$burn = function (engine) {
+	return function (tank0) {
+		return A2(author$project$Trampoline$Fueled$Internal$run, engine, tank0 - 1);
+	};
+};
+var author$project$Trampoline$Fueled$lazy = function (thunk) {
+	return function (tank0) {
+		return A2(thunk, _Utils_Tuple0, tank0);
+	};
+};
+var author$project$Trampoline$Fueled$call = F2(
+	function (f, a) {
+		return author$project$Trampoline$Fueled$burn(
+			author$project$Trampoline$Fueled$lazy(
+				function (_n0) {
+					return f(a);
+				}));
+	});
+var author$project$Trampoline$Fueled$Internal$Complete = function (a) {
+	return {$: 'Complete', a: a};
+};
+var author$project$Trampoline$Fueled$return = function (a) {
+	return function (tank0) {
+		return _Utils_Tuple2(
+			tank0,
+			author$project$Trampoline$Fueled$Internal$Complete(a));
+	};
+};
+var author$project$STLC$Internal$evalF = F2(
+	function (env, e) {
+		switch (e.$) {
+			case 'EVar':
+				var x = e.a;
+				return author$project$Trampoline$Fueled$return(
+					A2(
+						elm$core$Result$fromMaybe,
+						author$project$STLC$Internal$UndefinedVariable(x),
+						A2(author$project$STLC$Internal$lookupVal, env, x)));
+			case 'ENum':
+				var n = e.a;
+				return author$project$Trampoline$Fueled$return(
+					elm$core$Result$Ok(
+						author$project$STLC$Internal$VNum(n)));
+			case 'ELam':
+				var x = e.a;
+				var ty1 = e.b;
+				var eBody = e.c;
+				return author$project$Trampoline$Fueled$return(
+					elm$core$Result$Ok(
+						A4(author$project$STLC$Internal$VClo, x, ty1, eBody, env)));
+			default:
+				var e1 = e.a;
+				var e2 = e.b;
+				return A2(
+					author$project$Trampoline$Fueled$andThen,
+					function (r1) {
+						if (r1.$ === 'Err') {
+							var err1 = r1.a;
+							return author$project$Trampoline$Fueled$return(
+								elm$core$Result$Err(err1));
+						} else {
+							if (r1.a.$ === 'VClo') {
+								var _n2 = r1.a;
+								var x = _n2.a;
+								var ty1 = _n2.b;
+								var eBody = _n2.c;
+								var envClo = _n2.d;
+								return A2(
+									author$project$Trampoline$Fueled$andThen,
+									function (r2) {
+										if (r2.$ === 'Err') {
+											var err2 = r2.a;
+											return author$project$Trampoline$Fueled$return(
+												elm$core$Result$Err(err2));
+										} else {
+											var v2 = r2.a;
+											return A2(
+												author$project$Trampoline$Fueled$call,
+												author$project$STLC$Internal$evalF(
+													A3(author$project$STLC$Internal$extendVal, envClo, x, v2)),
+												eBody);
+										}
+									},
+									A2(
+										author$project$Trampoline$Fueled$call,
+										author$project$STLC$Internal$evalF(env),
+										e2));
+							} else {
+								var v1 = r1.a;
+								return author$project$Trampoline$Fueled$return(
+									elm$core$Result$Err(
+										A2(author$project$STLC$Internal$AppliedNonFunction, v1, e2)));
+							}
+						}
+					},
+					A2(
+						author$project$Trampoline$Fueled$call,
+						author$project$STLC$Internal$evalF(env),
+						e1));
+		}
+	});
+var author$project$STLC$Internal$typeToString = function (ty) {
 	var baseToString = function (tyOuter) {
 		if (tyOuter.$ === 'TInt') {
 			return 'int';
@@ -6633,7 +6609,7 @@ var author$project$STLC$typeToString = function (ty) {
 	};
 	return funToString(ty);
 };
-var author$project$STLC$exprToString = function (expr) {
+var author$project$STLC$Internal$exprToString = function (expr) {
 	var appToString = function (eOuter) {
 		if (eOuter.$ === 'EApp') {
 			var e1 = eOuter.a;
@@ -6660,14 +6636,14 @@ var author$project$STLC$exprToString = function (expr) {
 			var x = eOuter.a;
 			var ty1 = eOuter.b;
 			var eBody = eOuter.c;
-			return '\\' + (x + (':' + (author$project$STLC$typeToString(ty1) + ('. ' + author$project$STLC$exprToString(eBody)))));
+			return '\\' + (x + (':' + (author$project$STLC$Internal$typeToString(ty1) + ('. ' + author$project$STLC$Internal$exprToString(eBody)))));
 		} else {
 			return appToString(eOuter);
 		}
 	};
 	return lambdaToString(expr);
 };
-var author$project$STLC$typeErrorToString = function (err) {
+var author$project$STLC$Internal$typeErrorToString = function (err) {
 	switch (err.$) {
 		case 'NoSuchVariable':
 			var x = err.a;
@@ -6675,13 +6651,13 @@ var author$project$STLC$typeErrorToString = function (err) {
 		case 'ExpectedFunction':
 			var ty = err.a;
 			var e = err.b;
-			return 'Expected ' + (author$project$STLC$exprToString(e) + (' to be a function, but it has type ' + author$project$STLC$typeToString(ty)));
+			return 'Expected ' + (author$project$STLC$Internal$exprToString(e) + (' to be a function, but it has type ' + author$project$STLC$Internal$typeToString(ty)));
 		default:
 			var ty11 = err.a;
 			var e1 = err.b;
 			var ty2 = err.c;
 			var e2 = err.d;
-			return author$project$STLC$exprToString(e1) + (' expects an argument of type ' + (author$project$STLC$typeToString(ty11) + (' but ' + (author$project$STLC$exprToString(e2) + (' has type ' + author$project$STLC$typeToString(ty2))))));
+			return author$project$STLC$Internal$exprToString(e1) + (' expects an argument of type ' + (author$project$STLC$Internal$typeToString(ty11) + (' but ' + (author$project$STLC$Internal$exprToString(e2) + (' has type ' + author$project$STLC$Internal$typeToString(ty2))))));
 	}
 };
 var author$project$Trampoline$AndGo = {$: 'AndGo'};
@@ -6736,7 +6712,7 @@ var author$project$STLC$viewProgramState = function (programState) {
 						_List_fromArray(
 							[
 								elm$html$Html$text(
-								author$project$STLC$deadEndsToString(err))
+								author$project$STLC$Internal$deadEndsToString(err))
 							]))
 					]));
 		case 'PSIllTyped':
@@ -6763,7 +6739,7 @@ var author$project$STLC$viewProgramState = function (programState) {
 						_List_fromArray(
 							[
 								elm$html$Html$text(
-								author$project$STLC$typeErrorToString(err))
+								author$project$STLC$Internal$typeErrorToString(err))
 							]))
 					]));
 		default:
@@ -6783,7 +6759,7 @@ var author$project$STLC$viewProgramState = function (programState) {
 						_List_fromArray(
 							[
 								elm$html$Html$text(
-								'Well typed: ' + author$project$STLC$typeToString(ty))
+								'Well typed: ' + author$project$STLC$Internal$typeToString(ty))
 							])),
 						A2(
 						elm$html$Html$input,
@@ -6793,7 +6769,7 @@ var author$project$STLC$viewProgramState = function (programState) {
 								elm$html$Html$Events$onClick(
 								A2(
 									author$project$Trampoline$SetInput,
-									A2(author$project$STLC$mkConfig, author$project$STLC$emptyEnv, expr),
+									A2(author$project$STLC$Internal$evalF, author$project$STLC$Internal$emptyEnv, expr),
 									author$project$Trampoline$AndGo)),
 								elm$html$Html$Attributes$value('Run')
 							]),
@@ -6801,7 +6777,7 @@ var author$project$STLC$viewProgramState = function (programState) {
 					]));
 	}
 };
-var author$project$STLC$valueToString = function (v) {
+var author$project$STLC$Internal$valueToString = function (v) {
 	if (v.$ === 'VNum') {
 		var n = v.a;
 		return elm$core$String$fromInt(n);
@@ -6810,8 +6786,8 @@ var author$project$STLC$valueToString = function (v) {
 		var ty = v.b;
 		var e = v.c;
 		var env = v.d;
-		return '<' + (author$project$STLC$exprToString(
-			A3(author$project$STLC$ELam, x, ty, e)) + ', ...>');
+		return '<' + (author$project$STLC$Internal$exprToString(
+			A3(author$project$STLC$Internal$ELam, x, ty, e)) + ', ...>');
 	}
 };
 var author$project$STLC$viewResult = function (res) {
@@ -6831,7 +6807,7 @@ var author$project$STLC$viewResult = function (res) {
 						} else {
 							var v = err.a;
 							var e = err.b;
-							return 'tried to apply ' + (author$project$STLC$valueToString(v) + (' to ' + author$project$STLC$exprToString(e)));
+							return 'tried to apply ' + (author$project$STLC$Internal$valueToString(v) + (' to ' + author$project$STLC$Internal$exprToString(e)));
 						}
 					}())
 				]));
@@ -6844,45 +6820,9 @@ var author$project$STLC$viewResult = function (res) {
 				[
 					elm$html$Html$text('Done: '),
 					elm$html$Html$text(
-					author$project$STLC$valueToString(v))
+					author$project$STLC$Internal$valueToString(v))
 				]));
 	}
-};
-var author$project$STLC$kontToString = function (outerKont) {
-	var build = function (kont) {
-		switch (kont.$) {
-			case 'KEmpty':
-				return function (s) {
-					return s;
-				};
-			case 'KAppL':
-				var e = kont.a;
-				var k = kont.b;
-				return function (s) {
-					return A2(
-						build,
-						k,
-						s + (' ' + author$project$STLC$exprToString(e)));
-				};
-			default:
-				var x = kont.a;
-				var ty = kont.b;
-				var e = kont.c;
-				var env = kont.d;
-				var k = kont.e;
-				return function (s) {
-					return A2(
-						build,
-						k,
-						author$project$STLC$valueToString(
-							A4(author$project$STLC$VClo, x, ty, e, env)) + (' ' + s));
-				};
-		}
-	};
-	return A2(build, outerKont, '[]');
-};
-var author$project$STLC$configToString = function (cfg) {
-	return '<' + (author$project$STLC$exprToString(cfg.expr) + (', ..., ' + (author$project$STLC$kontToString(cfg.kont) + '>')));
 };
 var author$project$Trampoline$Go = {$: 'Go'};
 var author$project$Trampoline$Stop = {$: 'Stop'};
@@ -6920,9 +6860,7 @@ var author$project$STLC$viewRunState = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('Stopped: '),
-						elm$html$Html$text(
-						author$project$STLC$configToString(cfg)),
+						elm$html$Html$text('Stopped'),
 						A2(
 						elm$html$Html$input,
 						_List_fromArray(
@@ -7385,6 +7323,27 @@ var author$project$Trampoline$update = F4(
 			}
 		}
 	});
+var author$project$Trampoline$Internal$defaultSteps = 5;
+var author$project$Trampoline$Fueled$Internal$defaultTankSize = author$project$Trampoline$Internal$defaultSteps;
+var author$project$Trampoline$Done = function (a) {
+	return {$: 'Done', a: a};
+};
+var author$project$Trampoline$Stepping = function (a) {
+	return {$: 'Stepping', a: a};
+};
+var author$project$Trampoline$Fueled$Internal$stepper = F2(
+	function (tankSize, engine) {
+		var _n0 = A2(author$project$Trampoline$Fueled$Internal$run, engine, tankSize);
+		var result = _n0.b;
+		if (result.$ === 'OutOfGas') {
+			var nextEngine = result.a;
+			return author$project$Trampoline$Stepping(nextEngine);
+		} else {
+			var a = result.a;
+			return author$project$Trampoline$Done(a);
+		}
+	});
+var author$project$Trampoline$Fueled$stepper = author$project$Trampoline$Fueled$Internal$stepper(author$project$Trampoline$Fueled$Internal$defaultTankSize);
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
 };
@@ -7531,7 +7490,7 @@ var elm$url$Url$fromString = function (str) {
 var elm$browser$Browser$element = _Browser_element;
 var author$project$STLC$main = elm$browser$Browser$element(
 	{
-		init: A2(author$project$Trampoline$init, author$project$STLC$init, author$project$STLC$step),
+		init: A2(author$project$Trampoline$init, author$project$STLC$init, author$project$Trampoline$Fueled$stepper),
 		subscriptions: author$project$Trampoline$subscriptions(author$project$STLC$subscriptions),
 		update: A2(author$project$Trampoline$update, author$project$STLC$update, author$project$STLC$ProgramFinished),
 		view: author$project$STLC$view
