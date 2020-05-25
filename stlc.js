@@ -6665,6 +6665,10 @@ var author$project$Trampoline$SetInput = F2(
 	function (a, b) {
 		return {$: 'SetInput', a: a, b: b};
 	});
+var author$project$Trampoline$setInput = F2(
+	function (a, and) {
+		return A2(author$project$Trampoline$SetInput, a, and);
+	});
 var elm$html$Html$input = _VirtualDom_node('input');
 var elm$html$Html$span = _VirtualDom_node('span');
 var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
@@ -6768,7 +6772,7 @@ var author$project$STLC$viewProgramState = function (programState) {
 								elm$html$Html$Attributes$type_('button'),
 								elm$html$Html$Events$onClick(
 								A2(
-									author$project$Trampoline$SetInput,
+									author$project$Trampoline$setInput,
 									A2(author$project$STLC$Internal$evalF, author$project$STLC$Internal$emptyEnv, expr),
 									author$project$Trampoline$AndGo)),
 								elm$html$Html$Attributes$value('Run')
@@ -6825,7 +6829,9 @@ var author$project$STLC$viewResult = function (res) {
 	}
 };
 var author$project$Trampoline$Go = {$: 'Go'};
+var author$project$Trampoline$go = author$project$Trampoline$Go;
 var author$project$Trampoline$Stop = {$: 'Stop'};
+var author$project$Trampoline$stop = author$project$Trampoline$Stop;
 var author$project$STLC$viewRunState = function (model) {
 	var _n0 = model.state;
 	switch (_n0.$) {
@@ -6848,7 +6854,7 @@ var author$project$STLC$viewRunState = function (model) {
 						_List_fromArray(
 							[
 								elm$html$Html$Attributes$type_('button'),
-								elm$html$Html$Events$onClick(author$project$Trampoline$Stop),
+								elm$html$Html$Events$onClick(author$project$Trampoline$stop),
 								elm$html$Html$Attributes$value('Stop')
 							]),
 						_List_Nil)
@@ -6866,7 +6872,7 @@ var author$project$STLC$viewRunState = function (model) {
 						_List_fromArray(
 							[
 								elm$html$Html$Attributes$type_('button'),
-								elm$html$Html$Events$onClick(author$project$Trampoline$Go),
+								elm$html$Html$Events$onClick(author$project$Trampoline$go),
 								elm$html$Html$Attributes$value('Resume')
 							]),
 						_List_Nil)
@@ -6883,6 +6889,9 @@ var author$project$STLC$viewRunState = function (model) {
 };
 var author$project$Trampoline$Inner = function (a) {
 	return {$: 'Inner', a: a};
+};
+var author$project$Trampoline$msg = function (m) {
+	return author$project$Trampoline$Inner(m);
 };
 var elm$html$Html$h1 = _VirtualDom_node('h1');
 var elm$html$Html$textarea = _VirtualDom_node('textarea');
@@ -6954,7 +6963,7 @@ var author$project$STLC$view = function (model) {
 								A2(elm$html$Html$Attributes$style, 'width', '100%'),
 								elm$html$Html$Events$onInput(
 								function (text) {
-									return author$project$Trampoline$Inner(
+									return author$project$Trampoline$msg(
 										author$project$STLC$SetProgramText(text));
 								})
 							]),
@@ -7130,7 +7139,9 @@ var author$project$Trampoline$refuelCmd = F2(
 			},
 			elm$core$Process$sleep(pauseTime));
 	});
-var author$project$Trampoline$defaultRefuel = A2(author$project$Trampoline$refuelCmd, 5, 20.0);
+var author$project$Trampoline$Internal$defaultPauseTime = 20.0;
+var author$project$Trampoline$Internal$defaultSteps = 5;
+var author$project$Trampoline$defaultRefuel = A2(author$project$Trampoline$refuelCmd, author$project$Trampoline$Internal$defaultSteps, author$project$Trampoline$Internal$defaultPauseTime);
 var author$project$Trampoline$Running = function (a) {
 	return {$: 'Running', a: a};
 };
@@ -7276,13 +7287,13 @@ var author$project$Trampoline$keepStepping = F4(
 		}
 	});
 var author$project$Trampoline$update = F4(
-	function (updateInner, notify, msg, model) {
+	function (updateInner, notify, message, model) {
 		update:
 		while (true) {
-			switch (msg.$) {
+			switch (message.$) {
 				case 'SetInput':
-					var a = msg.a;
-					var andGo = msg.b;
+					var a = message.a;
+					var andGo = message.b;
 					var inputModel = _Utils_update(
 						model,
 						{
@@ -7291,11 +7302,11 @@ var author$project$Trampoline$update = F4(
 					if (andGo.$ === 'AndGo') {
 						var $temp$updateInner = updateInner,
 							$temp$notify = notify,
-							$temp$msg = author$project$Trampoline$Go,
+							$temp$message = author$project$Trampoline$Go,
 							$temp$model = inputModel;
 						updateInner = $temp$updateInner;
 						notify = $temp$notify;
-						msg = $temp$msg;
+						message = $temp$message;
 						model = $temp$model;
 						continue update;
 					} else {
@@ -7304,14 +7315,14 @@ var author$project$Trampoline$update = F4(
 				case 'Go':
 					return author$project$Trampoline$doGo(model);
 				case 'Refuel':
-					var gas = msg.a;
+					var gas = message.a;
 					return A4(author$project$Trampoline$keepStepping, model, gas, updateInner, notify);
 				case 'Stop':
 					return _Utils_Tuple2(
 						author$project$Trampoline$doStop(model),
 						elm$core$Platform$Cmd$none);
 				default:
-					var msgInner = msg.a;
+					var msgInner = message.a;
 					var _n2 = A2(updateInner, msgInner, model.model);
 					var modelInnerNew = _n2.a;
 					var cmds = _n2.b;
@@ -7323,7 +7334,6 @@ var author$project$Trampoline$update = F4(
 			}
 		}
 	});
-var author$project$Trampoline$Internal$defaultSteps = 5;
 var author$project$Trampoline$Fueled$Internal$defaultTankSize = author$project$Trampoline$Internal$defaultSteps;
 var author$project$Trampoline$Done = function (a) {
 	return {$: 'Done', a: a};
