@@ -3,7 +3,7 @@
     "name": "mgree/trampoline",
     "summary": "a library for running potentially non-terminating applications",
     "license": "MIT",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "exposed-modules": [
         "Trampoline",
         "Trampoline.Fueled"
