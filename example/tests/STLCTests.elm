@@ -1,6 +1,6 @@
 module STLCTests exposing (..)
 
-import STLC exposing (..)
+import STLC.Internal exposing (..)
 
 import Test exposing (..)
 import Dict
